@@ -1,0 +1,136 @@
+{
+  "key": "bambu.p2s",
+  "vendor": "Bambu Lab",
+  "name": "P2S",
+  "provider": "bambuddy",
+  "match": [
+    "P2S",
+    "N7"
+  ],
+  "mesh": "generic",
+  "build_volume": [
+    256,
+    256,
+    256
+  ],
+  "kinematics": "corexy_bed_z",
+  "extruders": [
+    {
+      "id": "main",
+      "label": "Nozzle",
+      "short": "",
+      "heater": "nozzle"
+    }
+  ],
+  "heaters": [
+    {
+      "id": "nozzle",
+      "kind": "nozzle",
+      "label": "Nozzle",
+      "anchor": "nozzle.main"
+    },
+    {
+      "id": "bed",
+      "kind": "bed",
+      "label": "Bed",
+      "anchor": "bed"
+    },
+    {
+      "id": "chamber",
+      "kind": "chamber",
+      "label": "Chamber",
+      "anchor": "chamber.heater",
+      "target": false
+    }
+  ],
+  "fans": [
+    {
+      "id": "part",
+      "label": "Part",
+      "anchor": "fan.part"
+    },
+    {
+      "id": "exhaust",
+      "label": "Exhaust",
+      "anchor": "fan.exhaust",
+      "accessory": "exhaust_box"
+    },
+    {
+      "id": "aux",
+      "label": "Aux",
+      "anchor": "fan.aux"
+    },
+    {
+      "id": "aux_l",
+      "label": "Aux 2",
+      "anchor": "fan.aux_l",
+      "accessory": "aux_fan_2"
+    },
+    {
+      "id": "ventilation",
+      "label": "Ventilation",
+      "anchor": "fan.filter",
+      "icon": "mdi:air-filter"
+    },
+    {
+      "id": "hotend",
+      "label": "Hotend",
+      "anchor": "fan.hotend",
+      "auto": true,
+      "icon": "mdi:fan-auto"
+    }
+  ],
+  "airduct": true,
+  "lights": [
+    {
+      "id": "chamber",
+      "label": "Chamber",
+      "anchor": "light.chamber"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "chamber",
+      "label": "Chamber"
+    }
+  ],
+  "doors": [
+    {
+      "id": "front",
+      "label": "Door",
+      "anchor": "door.front"
+    }
+  ],
+  "filament": {
+    "units": [
+      "AMS 2 Pro",
+      "AMS HT",
+      "AMS"
+    ],
+    "max_units": 4,
+    "external": [
+      {
+        "id": "main",
+        "tag": "EXT"
+      }
+    ]
+  },
+  "ai": [
+    "spaghetti",
+    "build_plate",
+    "clumping",
+    "pileup",
+    "air_printing",
+    "filament_backup"
+  ],
+  "accessories": [
+    {
+      "key": "exhaust_box",
+      "label": "Exhaust fan kit"
+    },
+    {
+      "key": "aux_fan_2",
+      "label": "Second auxiliary fan"
+    }
+  ]
+}

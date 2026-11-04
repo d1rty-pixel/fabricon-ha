@@ -68,28 +68,29 @@ Object.assign(FabriconCard.prototype, {
     return JSON.parse(src.replaceAll("__AMS_DEV__", u.dev).replaceAll("__AMS_ID__", u.id).replaceAll("__AMS__", u.prefix));
   },
 
-  // AMS units: the devices the integration hangs under the printer, with a humidity sensor. One the printer, while
-  // online, gets nothing from is not connected and left out; with the printer off every registered unit is shown.
+  // AMS units: the devices the integration hangs under the printer, with slot sensors. One the printer, while
+  // online, gets nothing from (humidity, or slot 1 on an AMS Lite, which has no sensors) is not connected and left
+  // out; with the printer off every registered unit is shown.
   // The registry scan runs only when HA hands out new registries.
   _findAms() {
     const h = this._hass;
     if (this._cfg.ams === false || !h?.entities || !h?.devices) return [];
     if (this._amsReg?.[0] !== h.entities || this._amsReg?.[1] !== h.devices) {
-      const pdev = h.entities[`sensor.${this._cfg.printer}_print_status`]?.device_id, found = [];
+      const pdev = h.entities[this._spec().core?.status]?.device_id, found = [];
       for (const d of Object.values(h.devices)) {
         if (!pdev || d.via_device_id !== pdev) continue;
         const ids = Object.values(h.entities).filter((x) => x.device_id === d.id).map((x) => x.entity_id);
-        const hum = ids.find((x) => /^sensor\..+_humidity$/.test(x));
-        if (!hum) continue;
-        const prefix = hum.slice(7, -"_humidity".length);
-        found.push({ prefix, dev: d.id, id: (d.name_by_user || d.name || "").match(/\bAMS ([A-H])\b/)?.[1],
+        const probe = ids.find((x) => /^sensor\..+_humidity$/.test(x)) || ids.find((x) => /^sensor\..+_slot_1$/.test(x));
+        if (!probe) continue;
+        const prefix = probe.slice(7, probe.lastIndexOf(probe.endsWith("_humidity") ? "_humidity" : "_slot_1"));
+        found.push({ prefix, dev: d.id, probe, id: (d.name_by_user || d.name || "").match(/\bAMS ([A-H])\b/)?.[1],
           model: (d.model || "AMS").toUpperCase(), slots: ids.filter((x) => x.startsWith(`sensor.${prefix}_slot_`)).length || 4 });
       }
       found.sort((x, y) => (x.id || "Z").localeCompare(y.id || "Z"));
       found.forEach((u, i) => { u.id ||= "ABCDEFGH"[i]; });
       this._amsReg = [h.entities, h.devices, found];
     }
-    const online = this._st(`binary_sensor.${this._cfg.printer}_online`)?.state === "on";
-    return this._amsReg[2].filter((u) => !online || !["unavailable", "unknown"].includes(this._st(`sensor.${u.prefix}_humidity`)?.state ?? "unavailable"));
+    const online = this._st(this._spec().core?.online)?.state === "on";
+    return this._amsReg[2].filter((u) => !online || !["unavailable", "unknown"].includes(this._st(u.probe)?.state ?? "unavailable"));
   },
 });

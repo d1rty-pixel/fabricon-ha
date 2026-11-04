@@ -1,0 +1,87 @@
+{
+  "key": "bambu.a1mini",
+  "vendor": "Bambu Lab",
+  "name": "A1 mini",
+  "provider": "bambuddy",
+  "match": [
+    "A1 MINI",
+    "A12",
+    "N1",
+    "A04"
+  ],
+  "mesh": "bambu.a1",
+  "build_volume": [
+    180,
+    180,
+    180
+  ],
+  "kinematics": "bedslinger",
+  "extruders": [
+    {
+      "id": "main",
+      "label": "Nozzle",
+      "short": "",
+      "heater": "nozzle"
+    }
+  ],
+  "heaters": [
+    {
+      "id": "nozzle",
+      "kind": "nozzle",
+      "label": "Nozzle",
+      "anchor": "nozzle.main"
+    },
+    {
+      "id": "bed",
+      "kind": "bed",
+      "label": "Bed",
+      "anchor": "bed"
+    }
+  ],
+  "fans": [
+    {
+      "id": "part",
+      "label": "Part",
+      "anchor": "fan.part"
+    },
+    {
+      "id": "hotend",
+      "label": "Hotend",
+      "anchor": "fan.hotend",
+      "auto": true,
+      "icon": "mdi:fan-auto"
+    }
+  ],
+  "airduct": false,
+  "lights": [
+    {
+      "id": "main",
+      "label": "Light",
+      "anchor": "light.main"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "chamber",
+      "label": "Chamber"
+    }
+  ],
+  "doors": [],
+  "filament": {
+    "units": [
+      "AMS Lite"
+    ],
+    "max_units": 1,
+    "external": [
+      {
+        "id": "main",
+        "tag": "EXT"
+      }
+    ]
+  },
+  "ai": [
+    "plate_position",
+    "filament_backup"
+  ],
+  "accessories": []
+}

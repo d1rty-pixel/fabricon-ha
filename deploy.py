@@ -6,7 +6,7 @@ python3 deploy.py              bundle the card, copy changed integration files, 
 python3 deploy.py --restart    same, and restart Home Assistant if the integration's own code changed
 python3 deploy.py --stl FILE   also upload FILE as the job model shown on the bed (/config/www/prints/current.stl)
 python3 deploy.py --dump       print the generated dashboard as YAML (needs PyYAML), deploy nothing
-python3 deploy.py --bundle     only bundle card/*.js -> custom_components/fabricon/frontend/fabricon-card.js
+python3 deploy.py --bundle     only bundle card/ -> custom_components/fabricon/frontend/ (card + models/)
 
 Settings below, overridden by deploy_local.py (not in git). Needs a long-lived access token (HA_TOKEN) and ssh to the
 HA host with write access to /config (SSH, SSH_SUDO).
@@ -14,6 +14,7 @@ HA host with write access to /config (SSH, SSH_SUDO).
 import argparse
 import glob
 import hashlib
+import json
 import os
 import shutil
 import subprocess
@@ -45,17 +46,39 @@ def connect():
 
 
 def bundle():
-    """card/*.js in name order -> the integration's frontend folder."""
+    """card/*.js in name order -> the integration's frontend folder; each model package card/models/<key>/*.js ->
+    frontend/models/<key>.js (a module the card imports when a printer needs it). The card gets the list of
+    models with their hashes (FAB_MODELS), so browsers fetch a changed model."""
+    out = os.path.dirname(CARD)
+    os.makedirs(os.path.join(out, "models"), exist_ok=True)
+    keys = {os.path.basename(os.path.dirname(d)) for d in glob.glob(os.path.join(HERE, "card", "models", "*", ""))}
+    for old in glob.glob(os.path.join(out, "models", "*.js")):          # packages that are gone
+        if os.path.basename(old)[:-3] not in keys:
+            os.remove(old)
+    cat = lambda parts: "".join(open(p, encoding="utf-8").read().rstrip() + "\n\n" for p in parts).rstrip() + "\n"
+    models, files = {}, []
+    for d in sorted(glob.glob(os.path.join(HERE, "card", "models", "*", ""))):
+        key = os.path.basename(os.path.dirname(d))
+        parts = sorted(glob.glob(os.path.join(d, "*.js")))
+        data = (f"// Fabricon printer model {key} (card/models/{key}/): mixed into the card instance, see card/models/README.md\n"
+                "const MODEL = {};\n\n" + cat(parts) + f"\nwindow.FabriconCard.registerModel({json.dumps(key)}, MODEL);\n")
+        path = os.path.join(out, "models", f"{key}.js")
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(data)
+        models[key] = f"{key}.js?v={hashlib.sha256(data.encode()).hexdigest()[:8]}"
+        files.append(path)
     parts = sorted(glob.glob(os.path.join(HERE, "card", "*.js")))
-    data = "".join(open(p, encoding="utf-8").read().rstrip() + "\n\n" for p in parts).rstrip() + "\n"
-    os.makedirs(os.path.dirname(CARD), exist_ok=True)
+    data = f"// model packages (deploy.py bundle): key -> file under /fabricon_static/models/\nconst FAB_MODELS = {json.dumps(models)};\n\n" + cat(parts)
     with open(CARD, "w", encoding="utf-8", newline="\n") as f:
         f.write(data)
+    files.insert(0, CARD)
     if shutil.which("node"):
-        r = subprocess.run(["node", "--check", CARD], capture_output=True, text=True)
-        if r.returncode:
-            sys.exit(f"card does not parse:\n{r.stderr}")
-    print(f"bundled {len(parts)} files -> {os.path.relpath(CARD, HERE)} ({len(data) // 1024} KB)")
+        for path in files:
+            r = subprocess.run(["node", "--check", path], capture_output=True, text=True)
+            if r.returncode:
+                sys.exit(f"{os.path.relpath(path, HERE)} does not parse:\n{r.stderr}")
+    print(f"bundled {len(parts)} files -> {os.path.relpath(CARD, HERE)} ({len(data) // 1024} KB), models: "
+          + ", ".join(f"{k} ({os.path.getsize(p) // 1024} KB)" for k, p in zip(models, files[1:])))
 
 
 def ssh(cmd, data=None):

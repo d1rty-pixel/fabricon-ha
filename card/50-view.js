@@ -1,14 +1,16 @@
 // View: framing, view tools (labels, x-ray, spin, camera), responsive layout, the render loop, picking.
 Object.assign(FabriconCard.prototype, {
-  // frame printer + AMS for the current aspect ratio: AMS on top = tall (about 640 x 720 mm seen from the
-  // front-right), beside = wide (about 1000 x 480 mm, seen more from the front), centred between the two
+  // frame printer + AMS for the current aspect ratio: AMS on top = tall (X2D: about 640 x 720 mm seen from the
+  // front-right), beside = wide (about 1000 x 480 mm, seen more from the front), centred between the two. The
+  // printer's own outline (_geo) scales it.
   _resetView() {
-    const c = this._cam, half = Math.tan(c.fov * Math.PI / 360), table = this._units.filter((u) => u.grp && u.grp.position.y < AMS_Y);
-    const side = table.length > 0, xs = [-W / 2, W / 2, ...table.flatMap((u) => [u.grp.position.x - AMS_W / 2, u.grp.position.x + AMS_W / 2])];
+    const c = this._cam, half = Math.tan(c.fov * Math.PI / 360), g = this._geo, k = Math.max(g.w, g.h * 0.82) / 392;
+    const table = this._units.filter((u) => u.grp && u.grp.position.y < g.h);
+    const side = table.length > 0, xs = [-g.w / 2, g.w / 2, ...table.flatMap((u) => [u.grp.position.x - (u.w || AMS_W) / 2, u.grp.position.x + (u.w || AMS_W) / 2])];
     const x0 = Math.min(...xs), x1 = Math.max(...xs);
-    const dist = side ? Math.max(460 / half, (x1 - x0) * 1.045 / (half * c.aspect)) : Math.max(500 / half, 430 / (half * c.aspect));
+    const dist = side ? Math.max(460 * k / half, (x1 - x0) * 1.045 / (half * c.aspect)) : Math.max(500 * k / half, 430 * k / (half * c.aspect));
     const dir = side ? new this.T.Vector3(0.3, 0.32, 0.9).normalize() : new this.T.Vector3(0.52, 0.3, 0.8).normalize();
-    this._ctl.target.set(side ? (x0 + x1) / 2 : 0, side ? 250 : 375, 0);
+    this._ctl.target.set(side ? (x0 + x1) / 2 : 0, side ? g.h * 0.52 : g.focus ?? g.h * 0.78, 0);
     this._ctl.maxDistance = Math.max(2600, dist * 1.3);   // portrait screens need the camera further out
     c.position.copy(dir.multiplyScalar(dist)).add(this._ctl.target);
     this._ctl.update();
@@ -26,19 +28,17 @@ Object.assign(FabriconCard.prototype, {
     const k = b.dataset.k;
     if (k === "reset") { this._userView = false; this._resetView(); return; }
     if (k === "camera") { this._camera(!this._camOpen); return; }
-    if (k === "light") { this._hass?.callService("light", "toggle", { entity_id: this._e("light", "chamber_light") }); return; }
+    if (k === "light") { const l = this._primaryLight(); if (l) this._hass?.callService("light", "toggle", { entity_id: l.entity }); return; }
     this._opts[k] = !this._opts[k];
     if (k === "labels") this._labelsSet = true;
     b.classList.toggle("on", this._opts[k]);
     if (k === "labels") this._labelsEl.style.display = this._opts.labels ? "" : "none";
     if (k === "xray") for (const m of this._shell) { m.transparent = this._opts.xray; m.opacity = this._opts.xray ? 0.18 : 1; m.depthWrite = !this._opts.xray; m.needsUpdate = true; }
     if (k === "xray") {
-      // the door, every glass / acrylic part (lid, side windows with their rims, AMS dome, toolhead cover) and the
-      // purge chute go away
-      const clear = new Set([this.M.glass, this.M.smoke, this.M.tint, this.M.dome, this._headCover, this._chuteMat, ...this._units.map((u) => u.dome)]);
-      this._door.visible = !this._opts.xray;
-      for (const m of this._winRims) m.visible = !this._opts.xray;
+      // the AMS domes go away, the model takes away its own glass, doors and covers
+      const clear = new Set([this.M.dome, ...this._units.map((u) => u.dome)]);
       this._scene.traverse((o) => { if (o.isMesh && clear.has(o.material)) o.visible = !this._opts.xray; });
+      this._xray(this._opts.xray);
     }
     if (k === "spin") this._ctl.autoRotate = this._opts.spin;
   },
@@ -108,18 +108,17 @@ Object.assign(FabriconCard.prototype, {
     // fans
     for (const f of Object.values(this._fans)) f.rotor.rotation.z += dt * f.speed * 0.32;
 
-    // door, nozzle lift
-    if (this._doorTarget != null) this._door.rotation.y += (this._doorTarget - this._door.rotation.y) * Math.min(1, dt * 4);
-    if (this._nozzleLift) for (const k of ["left", "right"]) {
-      const n = this._nozzles[k].g;
-      n.position.y += (this._nozzleLift[k] - n.position.y) * Math.min(1, dt * 5);
+    // doors (open angle set in _apply), nozzle lift
+    for (const d of Object.values(this._doors)) if (d.target != null) d.g.rotation[d.axis || "y"] += (d.target - d.g.rotation[d.axis || "y"]) * Math.min(1, dt * 4);
+    if (this._nozzleLift) for (const [k, n] of Object.entries(this._nozzles)) {
+      n.g.position.y += ((this._nozzleLift[k] || 0) - n.g.position.y) * Math.min(1, dt * 5);
     }
 
     if (this._gc) this._replay(dt, job);
     else this._simulate(dt, t, job);
 
     // spools turn while feeding: on the AMS the front of the spool runs down into the feeders
-    for (const sp of [...this._units.flatMap((u) => u.spools), ...this._holders.map((h) => h.spool)]) if (sp.spin) sp.g.rotation.x += dt * 0.6;
+    for (const sp of [...this._units.flatMap((u) => u.spools), ...Object.values(this._holders).map((h) => h.spool)]) if (sp.spin) sp.g.rotation.x += dt * 0.6;
 
     this._tubesUpdate();
     this._ctl.update();

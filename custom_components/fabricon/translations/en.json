@@ -20,11 +20,27 @@
     "step": {
       "init": {
         "title": "Fabricon",
-        "description": "The dashboard is rebuilt when you save.",
+        "description": "What do you want to set up? The dashboard is rebuilt when you save.",
+        "data": {
+          "target": "Configure"
+        }
+      },
+      "general": {
+        "title": "Fabricon · defaults",
+        "description": "Defaults for every printer (a printer's own settings win) and the demo printers.",
         "data": {
           "ams": "AMS support (units are detected automatically)",
-          "exhaust_box": "External Exhaust Fan kit fitted on the back",
+          "exhaust_box": "External Exhaust Fan kit fitted (X2D)",
           "demo": "Demo printers (extra views in fixed states, to try the dashboard)"
+        }
+      },
+      "printer": {
+        "title": "Fabricon · {printer}",
+        "description": "Hardware Home Assistant can't detect on this printer. Accessories of this model: {accessories}.",
+        "data": {
+          "ams": "AMS support (units are detected automatically)",
+          "exhaust_box": "Exhaust fan kit fitted",
+          "aux_fan_2": "Second auxiliary fan fitted"
         }
       }
     }

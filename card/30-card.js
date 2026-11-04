@@ -4,6 +4,8 @@ class FabriconCard extends HTMLElement {
   setConfig(config) {
     if (!config.printer) throw new Error("fabricon-card: 'printer' (the printer's entity prefix) is required");
     this._cfg = { ams: true, ...config };
+    const sub = this.shadowRoot?.querySelector(".ld-sub");
+    if (sub && !sub.textContent) sub.textContent = config.printer_spec?.model || "";
     this._units = [];
     if (!this.shadowRoot) {
       this._buildDom();
@@ -15,7 +17,7 @@ class FabriconCard extends HTMLElement {
     {
       const root = this.attachShadow({ mode: "open" });
       root.innerHTML = `<style>${CSS}</style><div class="card"><div class="main"><div class="dock"></div>
-        <div class="wrap busy"><div class="ld"><div class="ld-scan"></div><div class="ld-box"><b>Loading model</b><small class="ld-sub">X2D</small><i class="ld-bar"></i></div></div><div class="labels"></div>
+        <div class="wrap busy"><div class="ld"><div class="ld-scan"></div><div class="ld-box"><b>Loading model</b><small class="ld-sub"></small><i class="ld-bar"></i></div></div><div class="labels"></div>
         <div class="offline"><div class="off-frame"></div><div class="off-msg">Printer offline</div></div>
         <div class="tools"><button class="fab-key on" title="Labels" data-k="labels"><ha-icon icon="mdi:label-outline"></ha-icon>Labels</button>
         <button class="fab-key" title="X-ray" data-k="xray"><ha-icon icon="mdi:eye-outline"></ha-icon>X-ray</button>
@@ -27,6 +29,7 @@ class FabriconCard extends HTMLElement {
         <button class="fab-key" title="Camera" data-k="camera"><ha-icon icon="mdi:cctv"></ha-icon>Camera</button></div>
         <div class="rail"></div><div class="hud"></div>
         <div class="cam"><div class="cam-head"><span><b>Camera // C-01</b></span>
+          <label class="fab-key" title="Camera"><ha-icon icon="mdi:cctv"></ha-icon><select class="campick" data-fab-select></select></label>
           <button class="fab-key" title="Fullscreen" data-c="full"><ha-icon icon="mdi:fullscreen"></ha-icon>Fullscreen</button>
           <button class="fab-key" title="Snapshot" data-c="snap"><ha-icon icon="mdi:camera-outline"></ha-icon>Snapshot</button>
           <button class="fab-key" title="Close" data-c="close"><ha-icon icon="mdi:close"></ha-icon>Close</button></div>
@@ -34,6 +37,7 @@ class FabriconCard extends HTMLElement {
         <div class="side"><div class="side-in"><div class="side-head"><span></span><button title="Close">✕</button></div><div class="side-body"></div></div></div>
         </div><div class="foot"></div></div>`;
       this._card = root.querySelector(".card");
+      root.querySelector(".ld-sub").textContent = this._cfg.printer_spec?.model || "";
       this._wrap = root.querySelector(".wrap");
       this._side = root.querySelector(".side");
       this._sideBody = root.querySelector(".side-body");
@@ -45,7 +49,7 @@ class FabriconCard extends HTMLElement {
       this._camEl.querySelectorAll("button[data-c]").forEach((b) => b.addEventListener("click", (ev) => { ev.stopPropagation(); this._camAction(b.dataset.c); }));
       ["pointerdown", "pointerup", "click", "wheel"].forEach((ev) => this._camEl.addEventListener(ev, (e) => e.stopPropagation()));
       new ResizeObserver(() => this._camFit()).observe(root.querySelector(".cam-body"));
-      window.addEventListener("fabricon-camera", () => this._camera(true));
+      window.addEventListener("fabricon-camera", (ev) => this._camera(true, ev.detail?.camera));
       window.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && this._camOpen && !document.fullscreenElement) this._camera(false); });
       root.querySelector(".amssel").parentNode.style.display = "none";          // shown for exactly one AMS
       root.querySelector(".amssel").addEventListener("change", (ev) => {
@@ -90,6 +94,8 @@ class FabriconCard extends HTMLElement {
       import(`${CDN}/examples/jsm/environments/RoomEnvironment.js/+esm`),
     ]);
     this.T = T3;
+    await this._loadModel();
+    this._geo = this._geometry();
     const r = (this._renderer = new T3.WebGLRenderer({ antialias: true, alpha: true }));
     r.setPixelRatio(Math.min(devicePixelRatio, 2));
     r.useLegacyLights = true;
@@ -133,9 +139,9 @@ class FabriconCard extends HTMLElement {
     this._resetView();
 
     this._mats();
-    this._clickable = [];
-    this._labels = [];
+    this._parts();
     this._build();
+    this._mkLabels();
     this._floor();
 
     this._ray = new T3.Raycaster();
@@ -185,6 +191,9 @@ class FabriconCard extends HTMLElement {
     }
     this._railAms();
     if (!panels.length) this._rail.style.display = "none";
+    // view tools only for what the printer has
+    if (!this._primaryLight()) this._lightKey.remove();
+    if (!this._cams().length) this.shadowRoot.querySelector('.tools [data-k="camera"]').remove();
     if (this._cfg.serial) this._printSection(this._dock);
     else this._dock.remove();
     const foot = this._cfg.footer || [];

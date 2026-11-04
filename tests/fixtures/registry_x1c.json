@@ -1,0 +1,383 @@
+{
+ "devs": [
+  {
+   "id": "dev_hub",
+   "identifiers": [
+    [
+     "bambuddy",
+     "01TESTENTRY0000000000000000"
+    ]
+   ],
+   "via_device_id": null,
+   "model": "BamBuddy",
+   "name": "BamBuddy (bambuddy.local)",
+   "name_by_user": null,
+   "manufacturer": "BamBuddy"
+  },
+  {
+   "id": "dev_printer",
+   "identifiers": [
+    [
+     "bambuddy",
+     "01TESTENTRY0000000000000000_printer_00X1C000000001"
+    ]
+   ],
+   "via_device_id": "dev_hub",
+   "model": "X1C",
+   "name": "X1C (Test) (X1C / 00X1C000000001)",
+   "name_by_user": null,
+   "manufacturer": "Bambu Lab"
+  },
+  {
+   "id": "dev_ams",
+   "identifiers": [
+    [
+     "bambuddy",
+     "01TESTENTRY0000000000000000_printer_00X1C000000001_ams_00A00A000000002"
+    ]
+   ],
+   "via_device_id": "dev_printer",
+   "model": "AMS",
+   "name": "X2DC (Workshop) AMS A (AMS 2 Pro / 00A00A000000001)",
+   "name_by_user": null,
+   "manufacturer": "Bambu Lab"
+  }
+ ],
+ "ents": [
+  {
+   "entity_id": "binary_sensor.bambuddy_online",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_total_prints",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_successful_prints",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_failed_prints",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_cancelled_prints",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_total_print_time",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_total_filament_used",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_printers_online",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_printers_total",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_disk_free",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.bambuddy_disk_usage",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "update.bambuddy_update_3",
+   "device_id": "dev_hub",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_print_status",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_print_stage",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_progress",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_current_layer",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_total_layers",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_remaining_time",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_end_time",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_current_print",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_active_filament",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_bed_temperature",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_hms_errors",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_hotend_fan",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_ip_address",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_maintenance",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_print_hours",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_printable_objects",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_wifi_signal",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_ams_status",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_nozzle_temperature",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_nozzle_type",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_nozzle_diameter",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_external_spool",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.x1c_00x1c000000001_chamber_temperature",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "number.x1c_00x1c000000001_nozzle_target_temperature",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "number.x1c_00x1c000000001_bed_target_temperature",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "fan.x1c_00x1c000000001_part_cooling_fan",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "fan.x1c_00x1c000000001_auxiliary_fan",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "fan.x1c_00x1c000000001_chamber_fan",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "light.x1c_00x1c000000001_chamber_light",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "binary_sensor.x1c_00x1c000000001_online",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "binary_sensor.x1c_00x1c000000001_door",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "binary_sensor.x1c_00x1c000000001_plate_clear_needed",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "binary_sensor.x1c_00x1c000000001_sd_card",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "binary_sensor.x1c_00x1c000000001_developer_mode",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "switch.x1c_00x1c000000001_ai_monitoring",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "switch.x1c_00x1c000000001_first_layer_inspection",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "switch.x1c_00x1c000000001_build_plate_detection",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "switch.x1c_00x1c000000001_spaghetti_detection",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "switch.x1c_00x1c000000001_ams_filament_backup",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "button.x1c_00x1c000000001_clear_hms_errors",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "button.x1c_00x1c000000001_pause",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "button.x1c_00x1c000000001_plate_cleared",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "button.x1c_00x1c000000001_refresh_status",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "button.x1c_00x1c000000001_resume",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "button.x1c_00x1c000000001_stop",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "camera.x1c_00x1c000000001_camera",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "image.x1c_00x1c000000001_cover",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "update.x1c_00x1c000000001_firmware",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "select.x1c_00x1c000000001_print_speed",
+   "device_id": "dev_printer",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.ams_00a00a000000002_slot_1",
+   "device_id": "dev_ams",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.ams_00a00a000000002_slot_2",
+   "device_id": "dev_ams",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.ams_00a00a000000002_slot_3",
+   "device_id": "dev_ams",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.ams_00a00a000000002_slot_4",
+   "device_id": "dev_ams",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.ams_00a00a000000002_humidity",
+   "device_id": "dev_ams",
+   "platform": "bambuddy"
+  },
+  {
+   "entity_id": "sensor.ams_00a00a000000002_temperature",
+   "device_id": "dev_ams",
+   "platform": "bambuddy"
+  }
+ ]
+}

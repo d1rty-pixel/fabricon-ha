@@ -1,5 +1,5 @@
 // The printer itself (_build) and the table under it.
-Object.assign(FabriconCard.prototype, {
+Object.assign(MODEL, {
   // ------------------------------------------------------------------ the machine
 
   _build() {
@@ -52,8 +52,8 @@ Object.assign(FabriconCard.prototype, {
     }
     // side fans: left carries the chamber heater, right recirculates through the filter
     this._fans = {
-      left: this._fan(52, "x-", -hw - 2, 168, 52, e("fan", "left_auxiliary_fan")),
-      right: this._fan(52, "x+", hw + 2, 168, 52, e("fan", "right_auxiliary_fan")),
+      aux_l: this._fan(52, "x-", -hw - 2, 168, 52, e("fan", "left_auxiliary_fan")),
+      aux_r: this._fan(52, "x+", hw + 2, 168, 52, e("fan", "right_auxiliary_fan")),
     };
     // External Exhaust Fan kit (optional): a rounded box with a filter over the rear exhaust grille, its fan grille
     // protruding at the back
@@ -124,8 +124,8 @@ Object.assign(FabriconCard.prototype, {
       this._m(slabXY(44, 60, 6, 4), M.bodyDark, 145, y, RZ - 2);
       for (const dy of [13, -13]) this._box(15, 15, 1, M.black, 145, y + dy, RZ - 4.1);
     }
-    this._holders = [this._spoolHolder(145, 367, "right", true), this._spoolHolder(145, 134, "left", false)];
-    this._holders[1].grp.visible = false;                                  // shown while no AMS is connected
+    this._holders = { right: this._spoolHolder(145, 367, "right", true), left: this._spoolHolder(145, 134, "left", false) };
+    this._holders.left.grp.visible = false;                                // shown while no AMS is connected (_amsChanged)
 
     // front: header band with the logo, tiltable 5" screen on the left corner. Logo after the product photos:
     // printed dark, high on the right -- "Bambu" over "Lab", then "X2D" in wide lettering, its right end at x 157
@@ -195,9 +195,11 @@ Object.assign(FabriconCard.prototype, {
 
     // chamber light: LED bar along the top of the left wall
     this._ledBar = this._box(10, 4, 220, M.led, -hw + T + 10, H - 22, 0);
-    this._lamp = new T3.PointLight(0xfff1dc, 0, 900, 1.6);
-    this._lamp.position.set(-hw + 60, H - 40, 0);
-    this._scene.add(this._lamp);
+    const lamp = new T3.PointLight(0xfff1dc, 0, 900, 1.6);
+    lamp.position.set(-hw + 60, H - 40, 0);
+    this._scene.add(lamp);
+    this._lights = { chamber: { lamp, bar: this._ledBar, power: 1.4 } };
+    this._doors = { front: { g: this._door, open: -1.75 } };
 
     // CoreXY gantry (P2S / X2D platform): an 8 mm Y rod along each side wall, the carriage = a slider block on each
     // rod holding two stacked 10 mm hollow-steel X shafts; the toolhead runs on them on graphite sleeves. The XY
@@ -294,6 +296,8 @@ Object.assign(FabriconCard.prototype, {
         0, TIP + 2.5, 0, g, ent, 16, 4.5);
       this._nozzles[k] = { g, tip };
     }
+    this._heat = { nozzle_l: { mat: this._nozzles.left.tip.material, lo: 60, hi: 300 },
+                   nozzle_r: { mat: this._nozzles.right.tip.material, lo: 60, hi: 300 } };
 
     // Z: three 8 mm lead screws turned together by a belt under the floor, three 10 mm guide rods (ZS / ZR),
     // flange bearings on the floor, brackets at the top
@@ -316,6 +320,7 @@ Object.assign(FabriconCard.prototype, {
     this._scene.add(this._bed);
     this._box(280, 10, 280, M.bodyDark, 0, -11, 0, this._bed);
     this._bedPlate = this._box(258, 6, 258, M.plateTex, 0, -3, 0, this._bed, e("number", "bed_target_temperature"));
+    this._heat.bed = { mat: this._bedPlate.material, lo: 30, hi: 120 };
     this._box(258, 1, 258, M.plate, 0, -6.5, 0, this._bed);
     // sliders: one block per screw / rod pair (front corners, rear), brass nut on the screw, bushing on the rod
     for (const s of [-1, 1]) {
@@ -331,31 +336,17 @@ Object.assign(FabriconCard.prototype, {
     this._tubes = [];
     this._tubeMat = this.M.ptfe;
 
-    // labels (anchor objects; values filled in _apply)
-    // parts that sit close together share a box: the toolhead (nozzles, its fans), the chamber (heater, light, side
-    // fans), the rear air path (filter, exhaust kit)
-    this._lab = {
-      ...this._label(this._head, [0, HEAD_TOP + 4, 0], [["nozL", e("number", "left_nozzle_target_temperature")],
-        ["nozR", e("number", "right_nozzle_target_temperature")], ["part", e("fan", "part_cooling_fan")], ["hotend", e("sensor", "hotend_fan")]], "TOOLHEAD"),
-      ...this._label(this._heaterRing, [0, 60, 0], [["chamber", e("number", "chamber_target_temperature")], ["light", e("light", "chamber_light")],
-        ["auxL", e("fan", "left_auxiliary_fan")], ["auxR", e("fan", "right_auxiliary_fan")]], "CHAMBER"),
-      ...this._label(this._filter, [0, 40, 0], [["vent", e("fan", "ventilation")], ...(this._fans.exhaust ? [["exhaust", e("fan", "exhaust_fan")]] : [])], "REAR AIR"),
-      ...this._label(this._bedPlate, [120, 4, 120], [["bed", e("number", "bed_target_temperature")]]),
-      ...this._label(this._door.children[this._door.children.length - 1], [0, 20, 0], [["door", e("binary_sensor", "door")]]),
-      ...this._label(this._holders[0].spool.g, [0, 100, 0], [["extR", this._holders[0].ent, () => this._openAms()]]),
-      ...this._label(this._holders[1].spool.g, [0, 100, 0], [["extL", this._holders[1].ent, () => this._openAms()]]),
-    };
-  },
-
-  _floor() {
-    const T3 = this.T;
-    const grid = new T3.GridHelper(1600, 32, 0xffb400, 0x3a3018);
-    grid.material.transparent = true;
-    grid.material.opacity = 0.22;
-    this._scene.add(grid);
-    const disc = new T3.Mesh(new T3.CircleGeometry(520, 64).rotateX(-Math.PI / 2),
-      new T3.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 }));
-    disc.position.y = 0.5;
-    this._scene.add(disc);
+    // labels: anchors with the components shown there (filled in _apply from the spec). Parts that sit close
+    // together share a box: the toolhead (nozzles, its fans), the chamber (heater, light, side fans), the rear air
+    // path (filter, exhaust kit)
+    this._labelSpec = [
+      { anchor: this._head, off: [0, HEAD_TOP + 4, 0], title: "TOOLHEAD", rows: ["heater:nozzle_l", "heater:nozzle_r", "fan:part", "fan:hotend"] },
+      { anchor: this._heaterRing, off: [0, 60, 0], title: "CHAMBER", rows: ["heater:chamber", "light:chamber", "fan:aux_l", "fan:aux_r"] },
+      { anchor: this._filter, off: [0, 40, 0], title: "REAR AIR", rows: ["fan:ventilation", "fan:exhaust"] },
+      { anchor: this._bedPlate, off: [120, 4, 120], rows: ["heater:bed"] },
+      { anchor: this._door.children[this._door.children.length - 1], off: [0, 20, 0], rows: ["door:front"] },
+      { anchor: this._holders.right.spool.g, off: [0, 100, 0], rows: ["external:right"] },
+      { anchor: this._holders.left.spool.g, off: [0, 100, 0], rows: ["external:left"] },
+    ];
   },
 });

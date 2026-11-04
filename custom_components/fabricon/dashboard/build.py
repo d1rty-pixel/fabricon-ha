@@ -7,6 +7,8 @@ import json
 import re
 
 from .demo import demo_printers
+from . import spec
+from .providers import PROVIDERS
 from . import settings
 from .settings import DEV, P, P_LIST, P_MODEL, P_SERIAL, P_SLUG, TITLE
 from .templates import T
@@ -65,34 +67,64 @@ def missing_safe(node):
 
 
 def printers(devs, ents):
-    """BamBuddy's printers from HA's device registry: devices under the BamBuddy hub with a print status sensor.
-    devs: [{id, identifiers, via_device_id, model, name, name_by_user}], ents: [{entity_id, device_id}]."""
-    hubs = {d["id"] for d in devs if any(i[0] == "bambuddy" and "_printer_" not in i[1] for i in d["identifiers"])}
+    """Every provider's printers from HA's device registry, each with its spec (spec.py) bound against the entities
+    HA has. devs: [{id, identifiers, via_device_id, model, name, name_by_user}], ents: [{entity_id, device_id}]."""
+    have = {x["entity_id"] for x in ents}
     out = []
-    for d in devs:
-        if d.get("via_device_id") not in hubs:
-            continue
-        status = [x["entity_id"] for x in ents if x["device_id"] == d["id"] and re.fullmatch(r"sensor\..+_print_status", x["entity_id"])]
-        if not status:
-            continue
-        serial = next(i[1].split("_printer_")[-1] for i in d["identifiers"] if i[0] == "bambuddy")
-        out.append({"P": status[0][len("sensor."):-len("_print_status")], "DEV": d["id"], "serial": serial, "slug": serial.lower(),
-                    "model": (d.get("model") or "Printer").upper(),
-                    "name": d.get("name_by_user") or d["name"]})                # order + fallback; the header reads it live
+    for prov in PROVIDERS.values():
+        for p in prov.discover(devs, ents):
+            p["spec"] = spec.bind(p, spec.match(prov.NAME, p["model"]), prov.TABLE, have.__contains__)
+            out.append(p)
     return sorted(out, key=lambda p: p["name"].lower())
 
 
+def _spec(p):
+    """A printer's spec; printers given without one (tests, the template printer) get their profile's full set."""
+    if "spec" not in p:
+        prov = PROVIDERS[p.get("provider", "bambuddy")]
+        p = {**p, "spec": spec.bind(p, spec.match(prov.NAME, p["model"]), prov.TABLE, None)}
+    return p
+
+
+def _template(p):
+    """The printer's spec written for the template printer (P / DEV), the form the generator renders: entity ids,
+    device id and identity are swapped back in per printer (swap() in build)."""
+    sp = p["spec"]
+    text = json.dumps(sp)
+    if sp.get("prefix"):
+        text = text.replace(f'.{sp["prefix"]}_', f".{P}_").replace(f'"prefix": "{sp["prefix"]}"', f'"prefix": "{P}"')
+    if sp.get("device_id"):
+        text = text.replace(f'"{sp["device_id"]}"', f'"{DEV}"')
+    t = json.loads(text)
+    t.update({"slug": P_SLUG, "serial": P_SERIAL, "model": P_MODEL, "name": ""})
+    return t
+
+
+def _demos(source):
+    """The demo printers, each with a copy of the source printer's spec (their states are copies of its states)."""
+    out = []
+    for d in demo_printers(source["model"]):
+        text = json.dumps(source["spec"])
+        if source["spec"].get("prefix"):
+            text = text.replace(f'.{source["spec"]["prefix"]}_', f'.{d["P"]}_').replace(f'"prefix": "{source["spec"]["prefix"]}"', f'"prefix": "{d["P"]}"')
+        if source.get("DEV"):
+            text = text.replace(f'"{source["DEV"]}"', f'"{d["DEV"]}"')
+        sp = json.loads(text)
+        sp.update({"slug": d["slug"], "serial": d["serial"], "name": d["name"], "id": f'demo:{d["slug"]}'})
+        out.append({**d, "spec": sp})
+    return out
+
+
 def build(ps, options, stl_version=""):
-    """One view per printer (printers() + demo printers): the template printer's view and templates with each
-    printer's identity swapped in. Copies for further printers get their own template names."""
+    """One view per printer (printers() + demo printers), rendered from the printer's spec for the template printer,
+    then its identity swapped in. Copies of the button-card templates for further printers get their own names."""
     settings.OPTIONS.update(options)
-    ps = list(ps) or [{"P": P, "DEV": DEV, "serial": "", "slug": "printer", "model": "X2D", "name": ""}]
+    ps = [_spec(p) for p in ps] or [_spec({"P": P, "DEV": DEV, "serial": "", "slug": "printer", "model": "X2D", "name": ""})]
     if settings.OPTIONS["demo"]:   # demo.py: test printers in fixed states
-        ps += demo_printers()
+        ps += _demos(ps[0])
     listing = json.dumps(json.dumps([{"slug": p["slug"], "model": p["model"], "dev": p["DEV"], "name": p["name"]} for p in ps]))[1:-1]   # as JSON string content
-    base_view = json.dumps(missing_safe(add_triggers(no_parent_eval(view(stl_version)))))   # before the swap: they add template-printer ids
     base_t = json.dumps(missing_safe(add_triggers(no_parent_eval(T))))
-    views, templates = [], {}
+    views, templates, rendered = [], {}, {}
     for i, p in enumerate(ps):
         def swap(text):
             text = text.replace(P, p["P"]).replace(DEV, p["DEV"]).replace(P_LIST, listing)
@@ -101,7 +133,11 @@ def build(ps, options, stl_version=""):
             if i:
                 text = re.sub(r'"template": "(fab_[a-z_]+)"', rf'"template": "\1__{p["slug"]}"', text)
             return text
-        v = json.loads(swap(base_view))
+        t_spec = _template(p)
+        key = json.dumps(t_spec, sort_keys=True)          # printers of the same model render the same view
+        if key not in rendered:   # add_triggers / no_parent_eval before the swap: they add template-printer ids
+            rendered[key] = json.dumps(missing_safe(add_triggers(no_parent_eval(view(t_spec, stl_version)))))
+        v = json.loads(swap(rendered[key]))
         v.update({"path": p["slug"], "title": f'{p["model"]} {p["serial"]}'.strip()})      # fixed: the live name is in the header
         views.append(v)
         templates.update({k + (f'__{p["slug"]}' if i else ""): t for k, t in json.loads(swap(base_t)).items()})

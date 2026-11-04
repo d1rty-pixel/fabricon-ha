@@ -1,6 +1,6 @@
 """Components used in more than one place: header, status bar, keys, fan / heater rows, speed bars."""
 from .lib import (CHAMFER, HAZARD, JS_HMS, JS_LOCKED, JS_SLIDER, JS_STATUS, JS_TONE, NO_ACTION, NO_CHAMFER, SHARED_CSS, UNKNOWN,
-                  bc, call, css, e, grid, js)
+                  bc, call, css, e, grid, js, svc)
 
 
 def header():
@@ -63,17 +63,17 @@ def read(entity, name, icon, **kw):
     return bc("fab_read", entity=entity, name=name, icon=icon, **kw)
 
 
-def firmware_read():
-    return read(e("update", "firmware"), "Firmware", "mdi:chip",
+def firmware_read(entity):
+    return read(entity, "Firmware", "mdi:chip",
                 label="[[[ return (entity.attributes.installed_version || '—') + (entity.state === 'on' ? ' → ' + entity.attributes.latest_version : '') ]]]")
 
 
-def fan_card(key, name, icon="mdi:fan", auto=False):
+def fan_card(entity, name, icon="mdi:fan", auto=False):
     """A fan with its speed slider. auto: a fan the printer runs by itself (the hotend fan, a sensor in %):
     same card, the slider always locked."""
     pct = ("const p = ['unavailable', 'unknown'].includes(entity.state) ? 0 : Math.round(parseFloat(entity.state) || 0);" if auto
            else "const p = entity.state === 'on' ? (entity.attributes.percentage || 0) : 0;")
-    return bc("fab_ctl", entity=e("sensor" if auto else "fan", key), name=name, icon=icon, triggers_update=[e("sensor", "print_status")],
+    return bc("fab_ctl", entity=entity, name=name, icon=icon, triggers_update=[e("sensor", "print_status")],
               tap_action=NO_ACTION if auto else {"action": "toggle"},
               label=js(pct + f"return {UNKNOWN} ? '—' : p ? p + ' %' : 'OFF';"),
               variables={"tone": js(pct + "return p ? 'on' : 'off';"), "anim": js(pct + """
@@ -86,12 +86,11 @@ return slider({{id: entity.entity_id, domain: 'fan', service: 'set_percentage', 
 """)})
 
 
-def heat_card(name, sensor_key, target_key, icon):
-    """A heater: measured temperature, target slider."""
-    target = e("number", target_key)
+def heat_card(name, sensor, target, icon):
+    """A heater: measured temperature (sensor), target slider (number entity)."""
     heat = JS_TONE + "const heat = fabTone.heat(entity, states[variables.target]);"
-    return bc("fab_ctl", entity=e("sensor", sensor_key), name=name, icon=icon,
-              triggers_update=[e("sensor", sensor_key), target, e("sensor", "print_status")],
+    return bc("fab_ctl", entity=sensor, name=name, icon=icon,
+              triggers_update=[sensor, target, e("sensor", "print_status")],
               tap_action={"action": "more-info", "entity": target},
               label="[[[ const c = parseFloat(entity.state); return isNaN(c) ? '—' : Math.round(c) + '<span style=\"font-size:15px;color:var(--fab-dim)\"> °C</span>' ]]]",
               variables={"target": target,
@@ -113,8 +112,8 @@ def mode_keys(select, keys):
                     for opt, name, icon, label, col in keys])
 
 
-def load_btn(sensor, name="Load"):
-    """bambuddy.load_filament: idle or paused only (a paused print = colour change by hand), not the slot already in use."""
+def load_btn(sensor, service, name="Load"):
+    """The provider's load service (spec services["load"], given the slot sensor as entity_id): idle or paused only (a paused print = colour change by hand), not the slot already in use."""
     return bc("fab_key", entity=sensor, name=name, icon="mdi:tray-arrow-down",
               triggers_update=[sensor, e("sensor", "print_status")],
               label=js(JS_STATUS + """
@@ -124,13 +123,12 @@ if (['printing', 'preparing'].includes(s)) return 'PRINTING';
 return s === 'paused' ? 'COLOR CHANGE' : 'TO NOZZLE';
 """),
               variables={"enabled": js(JS_STATUS + "return !entity.attributes.empty && !entity.attributes.active && !['printing', 'preparing', 'offline'].includes(s);")},
-              tap_action=call("bambuddy", "load_filament", entity_id=sensor,
+              tap_action=svc(service, entity_id=sensor,
                               confirm=js("return `Load ${entity.attributes.type || 'filament'}${entity.attributes.name ? ' (' + entity.attributes.name + ')' : ''}?`")))
 
 
-def speed_bars():
-    """Print speed as four slanted bars rising left to right, filled up to the chosen mode; each bar selects its mode."""
-    sel = e("select", "print_speed")
+def speed_bars(sel):
+    """Print speed (a select) as four slanted bars rising left to right, filled up to the chosen mode; each bar selects its mode."""
     return bc("fab_base", entity=sel, show_icon=False, show_name=False, show_state=False,
               # narrow (phones, tablets in portrait): the bar names go, the mode stays readable on the left
               extra_styles=CHAMFER + SHARED_CSS + """

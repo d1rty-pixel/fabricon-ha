@@ -22,8 +22,22 @@ the sidebar. There is nothing to run on your computer and no YAML to write.
 The first button installs Fabricon through HACS, the second adds it after the restart (details in
 [Installation](#installation)).
 
-> **Note:** the 3D model is a Bambu Lab **X2D** (with optional AMS 2 Pro units and the External Exhaust Fan kit).
-> Other BamBuddy printers get a view as well, but the model still shows an X2D.
+### Supported printers
+
+Every printer BamBuddy manages gets a view. What a printer has (nozzles, fans, lights, door, chamber heater,
+filament units) comes from a model profile, so the panels show only what that printer offers.
+
+| Printer | Profile | 3D model |
+|---|---|---|
+| X2D | yes | detailed (AMS 2 Pro / HT, External Exhaust Fan kit) |
+| X1 Carbon, X1E | yes | X1 family |
+| P1S, P1P | yes | X1 family (P1S variant) |
+| A1, A1 mini | yes | A1 family, with the AMS Lite |
+| H2D, H2D Pro, H2C, P2S | yes | generic |
+| any other | detected from its entities | generic |
+
+The X1 and A1 models are built from published dimensions and photos. Some details are estimated, and corrections
+are welcome.
 
 ## Contents
 
@@ -196,8 +210,9 @@ for no URL or key: it uses the BamBuddy integration's. Check that key's permissi
 
 ## Options
 
-*Settings → Devices & services → Fabricon → **Configure***: AMS support, External Exhaust Fan kit and demo
-printers. The dashboard is rebuilt when you save.
+*Settings → Devices & services → Fabricon → **Configure***: the defaults (AMS support, demo printers) or one printer.
+A printer has its own AMS setting and the accessories of its model that HA can't detect (e.g. the X2D's External
+Exhaust Fan kit). The dashboard is rebuilt when you save.
 
 The dashboard rebuilds itself at every start and when BamBuddy adds a printer. To rebuild it by hand, use
 *Developer tools → Actions → **Fabricon: Rebuild dashboard***.
@@ -294,7 +309,10 @@ to the URL to see them.
 |---|---|
 | the 3D card, concatenated in name order into `custom_components/fabricon/frontend/` | `card/NN-topic.js` |
 | the dashboard generator (pure Python, runs inside HA) | `custom_components/fabricon/dashboard/` |
-| integration: setup, options, dashboard + card registration, BamBuddy proxy | `custom_components/fabricon/*.py` |
+| printers as data: model profiles, providers (entity bindings), the spec | `dashboard/profiles/`, `dashboard/providers/`, `dashboard/spec.py` |
+| 3D models of the printers (one bundle each, loaded on demand; contract in its README) | `card/models/<key>/` |
+| integration: setup, options, dashboard + card registration, print proxy and its backends | `custom_components/fabricon/*.py`, `backends/` |
+| golden test of the generator, card test page without HA | `tests/golden.py`, `tests/harness/serve.py` |
 | developer deploy over ssh | `deploy.py`, settings in `deploy_local.py` (not in git) |
 
 `deploy.py` copies your working copy to a test instance. It needs Python 3.9+, ssh with write access to `/config`
@@ -312,8 +330,13 @@ python3 deploy.py              bundle the card, copy changed files, rebuild the 
 python3 deploy.py --restart    same, and restart HA when the integration's own code changed
 python3 deploy.py --stl FILE   also upload FILE as the job model shown on the bed
 python3 deploy.py --dump       print the generated dashboard as YAML
-python3 deploy.py --bundle     only bundle the card
+python3 deploy.py --bundle     only bundle the card and the models
+python3 tests/golden.py        generated dashboards vs the stored references (--update after a wanted change)
+python3 tests/harness/serve.py the card without HA: http://localhost:8765/?fixture=x2d&state=printing
 ```
+
+A new Bambu model is mostly data: a profile in `dashboard/profiles/` (and optionally a 3D model in `card/models/`).
+A new printer system needs a provider module (`dashboard/providers/`) and, for the print dock, a backend.
 
 Releases: push a tag like `v0.2.0`. The release workflow bundles the card, sets the version and publishes
 `fabricon.zip`, which HACS installs. See [CLAUDE.md](CLAUDE.md) for the code conventions.

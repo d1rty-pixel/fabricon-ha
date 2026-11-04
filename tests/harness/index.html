@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Fabricon card harness</title>
+<style>
+  html, body { margin: 0; background: #151517; color: #ddd; font: 13px monospace; }
+  #bar { padding: 6px 10px; display: flex; gap: 14px; align-items: center; }
+  #bar a { color: #ffb400; }
+  fabricon-card { display: block; height: calc(100vh - 34px); }
+</style></head>
+<body>
+<div id="bar"></div>
+<script type="module">
+// The card with a made-up Home Assistant: config from a golden dashboard (tests/golden/<fixture>.json, first view),
+// states made up from the printer's spec for the chosen state. Services are logged, the print proxy answers 404.
+const q = new URLSearchParams(location.search), fixture = q.get("fixture") || "x2d", state = q.get("state") || "printing";
+const bar = document.getElementById("bar");
+bar.innerHTML = ["x2d", "x1c", "p1s", "a1", "h2d"].map((f) => `<a href="?fixture=${f}&state=${state}">${f}</a>`).join(" ")
+  + " · " + ["printing", "idle", "paused", "finished", "offline"].map((s) => `<a href="?fixture=${fixture}&state=${s}">${s}</a>`).join(" ")
+  + ` · mesh <input id="mesh" size="12" placeholder="(spec)" value="${q.get("mesh") || ""}">`;
+document.getElementById("mesh").addEventListener("change", (e) => { q.set("mesh", e.target.value); location.search = q; });
+
+window.loadCardHelpers = async () => ({ createCardElement: (c) => { const d = document.createElement("div");
+  d.style.cssText = "border:1px dashed #444;padding:6px;color:#888;min-height:30px"; d.textContent = c.type + (c.template ? " " + c.template : ""); return d; } });
+await import("/fabricon_static/fabricon-card.js");
+
+const find = (n) => { if (Array.isArray(n)) { for (const x of n) { const r = find(x); if (r) return r; } }
+  else if (n && typeof n === "object") { if (n.type === "custom:fabricon-card") return n; for (const v of Object.values(n)) { const r = find(v); if (r) return r; } } };
+const golden = await (await fetch(`/golden/${fixture}.json`)).json(), reg = await (await fetch(`/fixtures/registry_${fixture}.json`)).json();
+const cfg = find(golden.views[0]);
+if (q.get("mesh")) cfg.printer_spec.mesh = q.get("mesh");
+// variants of a fixture: &profile=bambu.a1mini&volume=180,180,180
+if (q.get("profile")) cfg.printer_spec.profile = q.get("profile");
+if (q.get("volume")) cfg.printer_spec.build_volume = q.get("volume").split(",").map(Number);
+const sp = cfg.printer_spec, c = sp.core;
+
+// states: every registry entity "unknown", then the spec's components by state
+const states = {}, set = (id, s, a = {}) => { if (id) states[id] = { entity_id: id, state: String(s), attributes: { ...(states[id]?.attributes || {}), ...a } }; };
+for (const e of reg.ents) set(e.entity_id, "unknown");
+const on = state !== "offline", run = ["printing", "paused"].includes(state);
+set(c.status, state === "printing" ? "printing" : state === "offline" ? "offline" : state === "idle" ? "idle" : state);
+set(c.online, on ? "on" : "off");
+if (on) {
+  set(c.progress, run ? 42 : state === "finished" ? 100 : 0); set(c.layer, 57); set(c.layers, 141); set(c.job, run ? "Harness benchy" : "unknown");
+  for (const h of sp.heaters) { const t = { nozzle: 220, bed: 65, chamber: 40 }[h.kind] * (run ? 1 : 0.15) + (run ? 0 : 22); set(h.temp, t.toFixed(1)); set(h.target, run ? { nozzle: 220, bed: 65, chamber: 40 }[h.kind] : 0); }
+  for (const f of sp.fans) f.auto ? set(f.entity, run ? 100 : 0) : set(f.entity, run ? "on" : "off", { percentage: run ? 70 : 0 });
+  for (const l of sp.lights) set(l.entity, "on");
+  for (const d of sp.doors) set(d.entity, "off");
+  set(c.usb, "on"); set(c.nozzle_select, "left");
+  sp.filament.external.forEach((x, i) => set(x.entity, "loaded", { type: "PETG", color: ["#2b6cff", "#e03a3a"][i % 2], remaining: 60, active: false, empty: false }));
+  reg.ents.filter((e) => /_slot_\d$/.test(e.entity_id)).forEach((e, i) => set(e.entity_id, "loaded", { type: "PLA", color: ["#ffb400", "#ffffff", "#111111", "#2e9e4f"][i % 4], remaining: 80 - i * 15, active: run && i === 0, empty: false }));
+  reg.ents.filter((e) => /_humidity$/.test(e.entity_id)).forEach((e) => set(e.entity_id, 18));
+}
+const entities = Object.fromEntries(reg.ents.map((e) => [e.entity_id, { entity_id: e.entity_id, device_id: e.device_id }]));
+const devices = Object.fromEntries(reg.devs.map((d) => [d.id, d]));
+// the golden view is written for the fixture's own ids, so states / registry match the config as it is
+const hass = { states, entities, devices, user: { is_admin: true },
+  callService: (d, s, data) => console.log("[harness] service", d, s, data),
+  fetchWithAuth: async () => new Response("{}", { status: 404 }) };
+const card = document.createElement("fabricon-card");
+card.setConfig(cfg);
+card.hass = hass;
+document.body.appendChild(card);
+window.card = card;
+</script></body></html>

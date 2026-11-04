@@ -32,7 +32,7 @@ HERE = Path(__file__).parent
 STATIC = "/fabricon_static"
 CARD = HERE / "frontend" / "fabricon-card.js"
 # the generator's modules in dependency order (each imports only ones before it); reloaded by fabricon.rebuild
-MODULES = ["settings", "lib", "templates", "controls", "panels", "view", "demo", "build"]
+MODULES = ["settings", "lib", "spec", "providers.bambuddy", "providers", "templates", "controls", "panels", "view", "demo", "build"]
 DEMO_TAG = ".x2d_demo_"
 
 
@@ -138,6 +138,11 @@ def _registry(hass):
     return devs, ents
 
 
+def printer_list(hass):
+    """The printers the dashboard shows, with their spec (for the options flow). Blocking (imports the generator)."""
+    return _generator()["build"].printers(*_registry(hass))
+
+
 def printer_ids(hass):
     """Entity prefixes of the printers the dashboard would show (to notice a new one)."""
     return [p["P"] for p in _generator()["build"].printers(*_registry(hass))]
@@ -154,7 +159,7 @@ async def async_build(hass, entry, reload=False):
     ps = mods["build"].printers(devs, ents)
     bambuddy = hass.config_entries.async_entries("bambuddy")
     options = {"ams": entry.options.get("ams", True), "exhaust_box": entry.options.get("exhaust_box", False),
-               "demo": entry.options.get("demo", False),
+               "demo": entry.options.get("demo", False), "printers": entry.options.get("printers", {}),
                "bambuddy_url": bambuddy[0].data.get("url", "") if bambuddy else ""}
     if options["demo"] and not ps:
         options["demo"] = False   # demos copy a real printer
@@ -165,6 +170,7 @@ async def async_build(hass, entry, reload=False):
     config = await hass.async_add_executor_job(mods["build"].build, ps, options, stl_version)
     board.set(config)
     data["printers"] = [p["P"] for p in ps]
+    data["providers"] = {p["serial"].upper(): p.get("provider", "bambuddy") for p in ps}   # the print proxy's backend
     _LOG.info("dashboard /%s: %d view(s)", board.url_path, len(config["views"]))
 
 

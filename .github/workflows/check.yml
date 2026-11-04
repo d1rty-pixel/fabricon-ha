@@ -16,6 +16,8 @@ jobs:
           node-version: "20"
       - run: python3 deploy.py --bundle
       - run: python3 -m compileall -q custom_components deploy.py ha_client.py
+      - name: Golden test (generated dashboard unchanged)
+        run: python3 tests/golden.py
       - name: Generate a dashboard for a made-up printer
         run: |
           cd custom_components/fabricon

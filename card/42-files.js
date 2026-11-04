@@ -54,9 +54,9 @@ Object.assign(FabriconCard.prototype, {
     this._gcLayer = null;
   },
 
-  // extruded moves as line segments in bed coordinates (bed centre = 128/128, Y towards the back)
+  // extruded moves as line segments in bed coordinates (bed centre = half the bed size, Y towards the back)
   _useGcode(g) {
-    const T3 = this.T;
+    const T3 = this.T, bx = this._geo.bed[0] / 2, by = this._geo.bed[1] / 2;
     let cnt = 0;
     const ext = new Uint32Array(g.n + 1);
     for (let i = 0; i < g.n; i++) { ext[i] = cnt; if (g.E[i] && i > 0) cnt++; }
@@ -69,8 +69,8 @@ Object.assign(FabriconCard.prototype, {
       if (!g.E[i]) continue;
       const c = pal[g.T[i] % pal.length], o = k * 6;
       segT[k] = g.T[i];
-      pos[o] = g.X[i - 1] - 128; pos[o + 1] = g.Z[i - 1]; pos[o + 2] = 128 - g.Y[i - 1];
-      pos[o + 3] = g.X[i] - 128; pos[o + 4] = g.Z[i]; pos[o + 5] = 128 - g.Y[i];
+      pos[o] = g.X[i - 1] - bx; pos[o + 1] = g.Z[i - 1]; pos[o + 2] = by - g.Y[i - 1];
+      pos[o + 3] = g.X[i] - bx; pos[o + 4] = g.Z[i]; pos[o + 5] = by - g.Y[i];
       for (const q of [0, 3]) { col[o + q] = c.r; col[o + q + 1] = c.g; col[o + q + 2] = c.b; }
       k++;
     }
@@ -136,7 +136,7 @@ Object.assign(FabriconCard.prototype, {
       this._print.position.y = 0.5;
       this._ghost.position.y = 0.5;
       this._bed.add(this._print, this._ghost);
-      this._print.userData.entity = this._e("sensor", "current_print");
+      this._print.userData.entity = this._spec().core?.job;
       this._clickable.push(this._print);
     }
   },

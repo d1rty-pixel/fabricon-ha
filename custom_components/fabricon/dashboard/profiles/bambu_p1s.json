@@ -1,0 +1,99 @@
+{
+  "key": "bambu.p1s",
+  "vendor": "Bambu Lab",
+  "name": "P1S",
+  "provider": "bambuddy",
+  "match": [
+    "P1S",
+    "P1P",
+    "C11",
+    "C12"
+  ],
+  "mesh": "bambu.x1",
+  "build_volume": [
+    256,
+    256,
+    256
+  ],
+  "kinematics": "corexy_bed_z",
+  "extruders": [
+    {
+      "id": "main",
+      "label": "Nozzle",
+      "short": "",
+      "heater": "nozzle"
+    }
+  ],
+  "heaters": [
+    {
+      "id": "nozzle",
+      "kind": "nozzle",
+      "label": "Nozzle",
+      "anchor": "nozzle.main"
+    },
+    {
+      "id": "bed",
+      "kind": "bed",
+      "label": "Bed",
+      "anchor": "bed"
+    }
+  ],
+  "fans": [
+    {
+      "id": "part",
+      "label": "Part",
+      "anchor": "fan.part"
+    },
+    {
+      "id": "aux",
+      "label": "Aux",
+      "anchor": "fan.aux"
+    },
+    {
+      "id": "chamber",
+      "label": "Chamber",
+      "anchor": "fan.chamber"
+    },
+    {
+      "id": "hotend",
+      "label": "Hotend",
+      "anchor": "fan.hotend",
+      "auto": true,
+      "icon": "mdi:fan-auto"
+    }
+  ],
+  "airduct": false,
+  "lights": [
+    {
+      "id": "chamber",
+      "label": "Chamber",
+      "anchor": "light.chamber"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "chamber",
+      "label": "Chamber"
+    }
+  ],
+  "doors": [],
+  "filament": {
+    "units": [
+      "AMS 2 Pro",
+      "AMS HT",
+      "AMS"
+    ],
+    "max_units": 4,
+    "external": [
+      {
+        "id": "main",
+        "tag": "EXT"
+      }
+    ]
+  },
+  "ai": [
+    "spaghetti",
+    "filament_backup"
+  ],
+  "accessories": []
+}

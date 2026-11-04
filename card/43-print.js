@@ -89,13 +89,13 @@ Object.assign(FabriconCard.prototype, {
 
   async _printList() {
     const P = this._pl;
-    P.usb = this._st(this._e("binary_sensor", "usb_drive"))?.state;
-    P.where.textContent = `PRINTER · USB STICK${P.path !== "/" ? " · " + P.path : ""}`;
-    const st = this._st(this._e("sensor", "print_status"))?.state;
+    P.usb = this._st(this._spec().core?.usb)?.state;
+    P.where.textContent = `PRINTER · ${this._storage()}${P.path !== "/" ? " · " + P.path : ""}`;
+    const st = this._st(this._spec().core?.status)?.state;
     P.online = !!st && !["offline", "unknown", "unavailable"].includes(st);
     if (!P.online) { P.files = []; P.list.innerHTML = `<div class="pnote">PRINTER OFFLINE</div>`; return; }
-    if (P.usb === "off") { P.files = []; P.list.innerHTML = `<div class="pnote">NO USB STICK IN THE PRINTER</div>`; return; }
-    P.list.innerHTML = `<div class="pnote">READING THE USB STICK …</div>`;
+    if (P.usb === "off") { P.files = []; P.list.innerHTML = `<div class="pnote">NO ${this._storage()} IN THE PRINTER</div>`; return; }
+    P.list.innerHTML = `<div class="pnote">READING THE ${this._storage()} …</div>`;
     let d;
     try { d = await (await this._api("files", { path: P.path })).json(); }
     catch (err) { P.files = []; P.list.innerHTML = `<div class="pnote warn">${escHtml(err.message)}</div>`; return; }
@@ -193,8 +193,12 @@ Object.assign(FabriconCard.prototype, {
     return map;
   },
 
+  // the printer's storage: a USB stick or (older models) a microSD card
+  _storage() { return (this._spec().core?.usb || "").endsWith("_sd_card") ? "SD CARD" : "USB STICK"; },
+
   _trayName(t) {
-    return t.ams >= 254 ? (t.tray === 255 ? "EXT R" : "EXT L") : t.ams >= 128 ? `HT ${t.ams - 127}` : `${"ABCDEFGH"[t.ams] || "?"}${t.slot + 1}`;
+    const ext = this._spec().filament?.external || [];
+    return t.ams >= 254 ? (ext.length < 2 ? "EXT" : t.tray === 255 ? "EXT R" : "EXT L") : t.ams >= 128 ? `HT ${t.ams - 127}` : `${"ABCDEFGH"[t.ams] || "?"}${t.slot + 1}`;
   },
 
   // reveal: scroll the stacked dock to it (a pick by hand, not the restore after a reload)
@@ -252,14 +256,14 @@ Object.assign(FabriconCard.prototype, {
   _printState() {
     const P = this._pl, b = this._startEl;
     if (!P || !b) return;
-    const e = this._e.bind(this), s = this._st(e("sensor", "print_status"))?.state, usb = this._st(e("binary_sensor", "usb_drive"))?.state;
+    const core = this._spec().core || {}, s = this._st(core.status)?.state, usb = this._st(core.usb)?.state;
     const online = !!s && !["offline", "unknown", "unavailable"].includes(s);
     if ((P.usb !== undefined && usb !== P.usb) || (P.online !== undefined && online !== P.online)) this._printList();
     const i = P.info, q = P.queue, unmapped = i?.filaments.some((x) => !(P.map[x.id] >= 0));
     const why = !s || ["offline", "unknown", "unavailable"].includes(s) ? "PRINTER OFFLINE"
       : q && ["sending", "pending"].includes(q.status) ? "QUEUED"
       : !READY_STATES.includes(s) ? `PRINTER IS ${s.replace(/_/g, " ").toUpperCase()}`
-      : usb === "off" ? "NO USB STICK" : !P.sel ? "PICK A FILE IN THE PRINT LIST" : !i ? "READING THE FILE …"
+      : usb === "off" ? `NO ${this._storage()}` : !P.sel ? "PICK A FILE IN THE PRINT LIST" : !i ? "READING THE FILE …"
       : unmapped ? "MAP EVERY FILAMENT TO A SLOT" : null;
     const key = [why, P.sel?.path, q?.status, q?.text].join("|");
     if (key === P.stateKey) return;
@@ -330,7 +334,7 @@ Object.assign(FabriconCard.prototype, {
   // the user said the plate is empty: tell Bambuddy (its queue waits for that after every finished / failed job)
   // and wait until it reports the plate clear
   async _plateCleared() {
-    const need = this._e("binary_sensor", "plate_clear_needed"), btn = this._e("button", "plate_cleared");
+    const need = this._spec().core?.plate_needed, btn = this._spec().core?.plate_cleared;
     if (this._st(need)?.state !== "on" || !this._st(btn)) return;
     await this._hass.callService("button", "press", { entity_id: btn });
     for (let k = 0; k < 20 && this._st(need)?.state === "on"; k++) await new Promise((r) => setTimeout(r, 500));

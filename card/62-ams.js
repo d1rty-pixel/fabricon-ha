@@ -1,34 +1,5 @@
 // AMS units and spool holders: build, place (top / left / right / on the table).
 Object.assign(FabriconCard.prototype, {
-  // Spool holder on its base (wiki photos): the bracket slides into the base, a round arm with an end cap runs along
-  // the back panel to the right (+x), 30 mm off it, and reaches past the side wall, so a spool on it hangs beside the
-  // printer's back corner. With `tube` the L-shaped PTFE tube holder stands in the arm's slot where the housing
-  // ends, the spool outside it towards the end cap; its fitting on top points towards the printer's middle,
-  // the tube leaves it downwards to the buffer. `side` is the external spool (left / right) it carries. Returns the
-  // group, the spool on the arm, its entity, the fitting.
-  _spoolHolder(x, y, side, tube) {
-    const T3 = this.T, M = this.M, grp = new T3.Group(), RZ = -D / 2;
-    const mat = this._holderMat ||= new T3.MeshStandardMaterial({ color: 0x3a3c40, metalness: 0.25, roughness: 0.6 });
-    grp.position.set(x, y, RZ);
-    this._scene.add(grp);
-    const ent = this._e("sensor", `${side}_external_spool`), L = 160, ay = -8, az = -30;
-    this._box(34, 50, 8, mat, 0, 0, -8, grp, ent);                                          // bracket in the base
-    this._box(26, 28, az + 12, mat, 0, ay, (az - 12) / 2 - 6, grp, ent);                     // standoff to the arm
-    this._cyl(15, L, "x", mat, L / 2, ay, az, grp, ent, 32);                                // arm
-    this._cyl(18, 8, "x", mat, L + 4, ay, az, grp, ent, 32);                                // end cap
-    const spool = this._spool(grp, ent);
-    spool.g.position.set(W / 2 - x + 66, ay + 13, az);                                      // between stem and end cap; the hub rests on the arm
-    let fit = null;
-    if (tube) {
-      const sx = W / 2 - x + 4, top = ay + 125;
-      this._cyl(5, top - ay, "y", mat, sx, (ay + top) / 2, az, grp, ent, 16);              // stem in the arm's slot
-      this._cyl(5, 26, "x", mat, sx - 13, top, az, grp, ent, 16);                           // arm
-      this._cyl(6.5, 16, "y", M.black, sx - 26, top - 4, az, grp, null, 16);                // tube fitting
-      fit = new T3.Vector3(x + sx - 26, y + top - 12, RZ + az);
-    }
-    return { grp, spool, ent, fit };
-  },
-
   // A 1 kg spool turning about x: flanges with hub hole and six cut-outs, hub, filament winding with rounded edges
   // (unit radius, scaled by the fill in _spoolState). Returns the group and the winding.
   _spool(parent, ent) {
@@ -78,7 +49,7 @@ Object.assign(FabriconCard.prototype, {
       u.labs = new Set(Object.values(rows).map((r) => r.lab));
     });
     this.shadowRoot.querySelector(".amssel").parentNode.style.display = units.length === 1 ? "" : "none";
-    this._holders[1].grp.visible = !units.length;                          // the lower holder only without an AMS
+    this._amsChanged(units);
     this._railAms();
     let saved = null;
     try { saved = localStorage.getItem("fabricon-ams"); } catch (_) { /* no storage: use the config */ }
@@ -100,7 +71,10 @@ Object.assign(FabriconCard.prototype, {
     }
   },
 
+  // u.w: the unit's width (placement, framing)
   _buildAms(u) {
+    if (u.model.includes("LITE")) { u.w = 397; return this._buildAmsLite(u); }
+    u.w = AMS_W;
     const T3 = this.T, M = this.M;
       // AMS 2 Pro (372 x 280 x 226): a rounded dark tray (floor, front and back walls) that the spools sit in on
       // steel rollers, a smoked half-round lid, a solid D-shaped right cheek, and behind a smoked front window
@@ -162,18 +136,89 @@ Object.assign(FabriconCard.prototype, {
 
   },
 
+  // AMS Lite (397 x 208 x 342, store spec). Shapes from the wiki unboxing guide (step 16, https://wiki.bambulab.com/en/a1/manual/unboxing-a1-combo):
+  // a flat light grey peanut-shaped body tilted ~19 degrees (left end low) on a dark grey stand, one shaft through each
+  // lobe with a rotary spool holder on each side (four spools, orange / green shaft ends), two smoked feeder modules with
+  // orange knobs on the upper left edge, four PTFE tubes (u.feeds) from them to the hub on the toolhead. The front is
+  // the unit's front (z + AMS_D / 2), like the AMS 2 Pro. Sizes of single parts are estimates from the photos.
+  _buildAmsLite(u) {
+    const T3 = this.T, M = this.M, grp = u.grp = new T3.Group(), spools = u.spools = [];
+    this._scene.add(grp);
+    const body = u.body = new T3.MeshStandardMaterial({ color: 0xe3e5e7, metalness: 0.05, roughness: 0.5 });
+    const dark = new T3.MeshStandardMaterial({ color: 0x4d5054, metalness: 0.2, roughness: 0.6 });
+    const smoke = new T3.MeshPhysicalMaterial({ color: 0x2a2d30, roughness: 0.25, transparent: true, opacity: 0.88 });
+    const orange = new T3.MeshStandardMaterial({ color: 0xe8912d, roughness: 0.4 });
+    this._shell.push(body, dark);
+    if (this._opts.xray) { body.transparent = true; body.opacity = 0.18; body.depthWrite = false; }
+    u.dome = new T3.MeshBasicMaterial({ transparent: true, opacity: 0 });                       // no lid: the drying glow has nothing to show on
+    const D = 208, zo = (AMS_D - D) / 2, hum = `sensor.${u.prefix}_humidity`;
+    const yc = 188, tilt = 0.33, R = 108, cc = 100;                                              // body centre height, tilt, lobe radius / half spacing
+    // stand: foot along z on the floor, post, cradle under the body (photo: dark grey boomerang with a cut-out plate)
+    this._box(34, 14, 196, dark, 12, 7, zo, grp);
+    this._box(28, 104, 26, dark, 20, 66, zo, grp);
+    const tg = new T3.Group();                                                                   // everything on the tilted body
+    tg.position.set(0, yc, zo);
+    tg.rotation.z = tilt;
+    grp.add(tg);
+    this._box(120, 16, 62, dark, 0, -R + 28, 0, tg);
+    // body: two lobes joined by a waist, 36 mm thick
+    const sh = new T3.Shape();
+    sh.moveTo(-cc, R); sh.quadraticCurveTo(0, 16, cc, R);
+    sh.absarc(cc, 0, R, Math.PI / 2, -Math.PI / 2, true);
+    sh.quadraticCurveTo(0, -16, -cc, -R);
+    sh.absarc(-cc, 0, R, -Math.PI / 2, Math.PI / 2, true);
+    const bg = new T3.ExtrudeGeometry(sh, { depth: 30, bevelEnabled: true, bevelThickness: 3, bevelSize: 3, bevelSegments: 2, curveSegments: 40 }).translate(0, 0, -15);
+    this._m(bg, body, 0, 0, 0, tg, hum);
+    const name = this._text(u.model, 70, 10, { color: "#8d9298", weight: 700 });
+    name.position.set(0, -R + 40, 19);
+    tg.add(name);
+    // shafts through the lobes, rotary holders (spools) at both faces
+    const sz = 53;
+    for (const sx of [-1, 1]) {
+      this._cyl(12, 2 * (sz + 40), "z", new T3.MeshStandardMaterial({ color: 0xcfd1d4, roughness: 0.5 }), sx * cc, 0, 0, tg, null, 20);
+      for (const s of [-1, 1]) this._cyl(8, 3, "z", sx < 0 ? orange : new T3.MeshStandardMaterial({ color: 0x3fbf5a, roughness: 0.4 }), sx * cc, 0, s * (sz + 40), tg, null, 16);
+    }
+    // two feeder modules (smoked housing, orange knobs) on the upper left edge, two outlets each
+    u.feeds = [];
+    const brass = new T3.MeshStandardMaterial({ color: 0xb8893a, metalness: 0.9, roughness: 0.3 });
+    const n = Math.min(4, u.slots);
+    for (let i = 0; i < n; i++) {
+      const lobe = i < 2 ? -1 : 1, face = i % 2 ? -1 : 1, ent = `sensor.${u.prefix}_slot_${i + 1}`;
+      const pv = new T3.Group();                                                                 // the spool's x axis lies along z here
+      pv.rotation.y = Math.PI / 2;
+      pv.position.set(lobe * cc, 0, face * sz);
+      tg.add(pv);
+      const { g, fil } = this._spool(pv, ent);
+      const fx = -52 + (i < 2 ? 0 : 38), fz = face * 22;
+      const fm = this._box(34, 50, 34, smoke, fx, R - 8 + 14, fz, tg, ent);
+      const gear = this._cyl(7, 6, "x", orange, fx - 20, R - 8 + 14, fz, tg, ent, 18);
+      const lamp = this._box(14, 3, 2, new T3.MeshBasicMaterial({ color: 0x333333 }), fx, R - 8 + 4, fz + 17.5, tg);
+      this._cyl(5, 8, "y", brass, fx, R - 8 + 42, fz, tg, null, 14);
+      const o = new T3.Object3D();
+      o.position.set(fx, R - 8 + 46, fz);
+      tg.add(o);
+      u.feeds.push(o);
+      spools.push({ g, fil, fm, gear, lamp });
+    }
+  },
+
   // One AMS: on the lid or on the table beside the printer (the dropdown). More: all on the table, A B ... from
   // left to right, the first half left of the printer, the rest right, fronts in line with the printer's front.
   _placeAms(pos) {
-    this._amsPos = ["top", "left", "right"].includes(pos) ? pos : "top";
+    const g = this._geo, top = g.amsTop;
+    this._amsPos = ["top", "left", "right"].includes(pos) && (pos !== "top" || top) ? pos : top ? "top" : "right";
     this.shadowRoot.querySelector(".amssel").value = this._amsPos;
+    this.shadowRoot.querySelector('.amssel option[value="top"]').disabled = !top;
     const n = this._units.length, nl = n > 1 ? Math.ceil(n / 2) : this._amsPos === "left" ? 1 : 0;
-    // the right side keeps more room: the spool holder and its spool sit at the back on that side
-    const step = AMS_W + 30, x0 = W / 2 + 40 + AMS_W / 2, xr = W / 2 + 140 + AMS_W / 2, z = D / 2 - AMS_D / 2;
+    // gaps to the printer per side (the X2D keeps more room on the right: a spool holder hangs there)
+    const [gl, gr] = g.amsGap || [40, 40];
+    // units side by side, 30 apart, each by its own width; the left ones outwards from the printer
+    const z = g.d / 2 - AMS_D / 2;
+    let xl = -g.w / 2 - gl, xr = g.w / 2 + gr;
+    for (let i = nl - 1; i >= 0; i--) { const u = this._units[i]; u.grp.position.set(xl - u.w / 2, 4, z); xl -= u.w + 30; }
     this._units.forEach((u, i) => {
-      if (n === 1 && this._amsPos === "top") u.grp.position.set(0, AMS_Y, AMS_Z);
-      else if (i < nl) u.grp.position.set(-x0 - (nl - 1 - i) * step, 4, z);
-      else u.grp.position.set(xr + (i - nl) * step, 4, z);
+      if (n === 1 && this._amsPos === "top") u.grp.position.set(0, top.y, top.z);
+      else if (i >= nl) { u.grp.position.set(xr + u.w / 2, 4, z); xr += u.w + 30; }
     });
     if (this._framed) this._resetView();
   },

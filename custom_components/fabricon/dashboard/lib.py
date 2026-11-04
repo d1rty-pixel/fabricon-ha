@@ -79,3 +79,10 @@ def call(domain, service, **data):
     if confirm:
         act["confirmation"] = {"text": confirm}
     return act
+
+
+def svc(service, **data):
+    """tap_action calling a provider service from the spec (services[action] = {service, data}); its data first,
+    then the call's own. confirm= as in call()."""
+    domain, name = service["service"].split(".", 1)
+    return call(domain, name, **{**service.get("data", {}), **data})
