@@ -2,36 +2,43 @@
 
 Home Assistant dashboard `/fabricon-dashboard`: one view per BamBuddy printer with a live three.js model of the X2D,
 the print dock (left of the model, under it on narrow screens), a fly-out sidebar of button-card panels and a
-control strip. Generated from Python, deployed by `deploy.py`.
+control strip. Everything ships as ONE integration (`custom_components/fabricon`, HACS / release zip): it serves the
+card, generates the dashboard in HA from the device registry (in memory, read-only, rebuilt at start / new printer /
+options / `fabricon.rebuild`) and proxies BamBuddy's file / queue API. `deploy.py` is only the developer tool.
 
 ```
-python3 deploy.py              bundle card, upload if changed, push config   (normal workflow)
-python3 deploy.py card|config  one part only
-python3 deploy.py setup        first-time wizard (dashboard/wizard.py) -> settings_local.py, then install
-python3 deploy.py install      integration entry (+ files / restart with ssh), demo, card, config
-python3 deploy.py demo         demo printers' states (dashboard/demo.py) -> HA now + the integration's demo.json (every start)
-python3 deploy.py proxy        with ssh: custom_components/fabricon -> /config/custom_components (restart HA when it changed)
+python3 deploy.py              bundle card, copy changed integration files over ssh, call fabricon.rebuild
+python3 deploy.py --restart    same; restarts HA when integration code (not dashboard/ or frontend/) changed
 python3 deploy.py --stl FILE   new job model on the bed
-python3 deploy.py --dump       config as YAML, nothing deployed
-python3 deploy.py --bundle     only build + node --check dist/fabricon-card.js
+python3 deploy.py --dump       generated dashboard as YAML (options from deploy_local.OPTIONS), nothing deployed
+python3 deploy.py --bundle     only card/*.js -> custom_components/fabricon/frontend/fabricon-card.js + node --check
 ```
+
+`fabricon.rebuild` reloads the generator modules (panel.MODULES, in dependency order) — a new module in dashboard/
+must be added there. Releases: tag `vX.Y.Z` -> .github/workflows/release.yml builds fabricon.zip (HACS zip_release).
 
 ## Where things live
 
 | What | File |
 |---|---|
-| HA URL, ssh, template printer ids, hardware flags (AMS, exhaust box) | `dashboard/settings.py` (defaults), `dashboard/settings_local.py` (real values, not in git) |
-| HA websocket client used by deploy.py; setup wizard | `dashboard/ha.py`, `dashboard/wizard.py` |
+| fixed names, placeholders (template printer `P` / `DEV`), `OPTIONS` (read at call time: `settings.OPTIONS[...]`) | `custom_components/fabricon/dashboard/settings.py` |
 | `e()` / `a()` entity ids, `js()`, `css()`, `bc()`, `call()`, shared snippets | `dashboard/lib.py` |
 | JS / CSS pasted into `[[[ ]]]` templates (fmt, slider, HMS, lock …) | `dashboard/snippets/*` (leading comment is stripped) |
 | button-card templates (look of keys, panels, rows) | `dashboard/templates.py` |
 | shared components: header, status bar, fan / heater rows, speed bars | `dashboard/controls.py` |
 | sidebar panels, one function each, `PANELS` = rail order | `dashboard/panels.py` |
 | page grid, model card config, footer keys | `dashboard/view.py` |
-| printers from the device registry, per-printer copies | `dashboard/build.py` |
+| printers from the registry lists, per-printer copies | `dashboard/build.py` |
 | demo printers in fixed states (offline, printing, paused, finished, failed, no data) | `dashboard/demo.py` |
-| 3D card, concatenated in name order into `dist/` | `card/NN-topic.js` |
-| integration (HACS): Bambuddy file / queue proxy behind HA login (`/api/fabricon/<serial>/...`), admin upload endpoint for deploy.py without ssh (`/api/fabricon_admin/file`) | `custom_components/fabricon/` |
+| integration setup, registry listener, rebuild service | `custom_components/fabricon/__init__.py` |
+| card serving (extra_js_url), dashboard registration (Lovelace internals), build + demo states | `custom_components/fabricon/panel.py` |
+| BamBuddy file / queue proxy behind HA login (`/api/fabricon/<serial>/...`) | `custom_components/fabricon/proxy.py` |
+| setup + options flow (AMS, exhaust box, demo) | `custom_components/fabricon/config_flow.py` |
+| 3D card, concatenated in name order into `custom_components/fabricon/frontend/` (gitignored) | `card/NN-topic.js` |
+| developer deploy; its HA websocket client; local settings (gitignored) | `deploy.py`, `ha_client.py`, `deploy_local.py` |
+
+`dashboard/` paths above are under `custom_components/fabricon/`. The generator must stay free of Home Assistant
+imports (deploy.py --dump and the Check workflow run it standalone).
 
 Card files: `00` constants (sizes, height budget), `05` dropdowns (shared, see below), `10` STL / 3MF / G-code parsers, `20` CSS, `30` the class
 (lifecycle, `_init`, `_chrome`), then methods added with `Object.assign(FabriconCard.prototype, {...})`: `40` sidebar,
@@ -49,14 +56,13 @@ templates `fab_*`, CSS `--fab-*`, JS helpers `fab*`, classes `fab-*`), integrati
   JS from variables aren't tracked by button-card: add them to `triggers_update`.
 - Nested cards in `custom_fields` get `do_not_eval` automatically (`no_parent_eval`); every `[[[ ]]]` template gets
   `MISSING_SAFE` (build.py): an entity HA doesn't have reads as "unavailable" instead of crashing the card.
-- `DEMO_PRINTERS` in settings.py adds the demo printer views; their entities exist only in HA's state machine (set by
-  the fabricon integration at start). After changing demo.py: `deploy.py demo` (+ restart HA if the integration changed).
+- The "demo" option adds the demo printer views; their entities exist only in HA's state machine, set by panel.py
+  from a snapshot of the first printer (taken while it is online, kept in .storage/fabricon.demo).
 - Every dropdown is a `<select data-fab-select>`: touch devices get the system picker, mouse devices the shared menu
   from `card/05-select.js` (works across shadow roots, also in button-cards). No other dropdown code.
 - Layout classes come from the card's width (`_layout`): narrow < 1500 (panels overlay), stack < 1100 (dock under
   the model), compact (icon keys), tiny < 600 (phones: fixed view, orbit off, swipes scroll).
 - Unknown values show "—"; controls lock while printing (`locked.js`); one component = one code path.
-- `dist/` is build output — edit `card/`.
+- `custom_components/fabricon/frontend/` is build output — edit `card/`.
 - The repository is public: nothing about a particular HA instance (URLs, IPs, serials, device ids, keys) goes into
-  tracked files; real values belong in `dashboard/settings_local.py` (gitignored). Files reach HA over ssh only when
-  `SSH` is set, otherwise through the integration's upload endpoint — keep both paths working.
+  tracked files; developer values belong in `deploy_local.py` (gitignored).

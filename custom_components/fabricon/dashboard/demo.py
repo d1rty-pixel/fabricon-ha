@@ -1,14 +1,13 @@
-"""Made-up printers for testing the dashboard in every state (settings.DEMO_PRINTERS).
+"""Made-up printers for testing the dashboard in every state (the integration's "demo printers" option).
 
 Each demo is a printer view of its own (build.py) whose entities exist only in Home Assistant's state machine: no
-device, no registry entry, nothing in BamBuddy. Their states are a copy of the real printer's (so attributes, units
-and options are realistic) with the profile's values on top. The fabricon integration sets them at every Home
-Assistant start (custom_components/fabricon/demo.json); `deploy.py demo` regenerates that file and sets them right away. Services
-called on them do nothing, the print proxy answers an empty USB stick.
+device, no registry entry, nothing in BamBuddy. Their states are a copy of a real printer's (so attributes, units
+and options are realistic) with the profile's values on top. The fabricon integration sets them (from a snapshot
+taken while that printer was online, kept in .storage). Services called on them do nothing, the print proxy answers
+an empty USB stick.
 """
 import datetime
 
-from .settings import P
 
 # key, name, profile: {entity suffix: state or (state, {attribute overrides})}; "*" = every other entity
 _PRINTING = {
@@ -43,8 +42,9 @@ def demo_printers(model="X2D"):
              "model": model, "name": name} for k, name, _ in DEMOS]
 
 
-def demo_states(states):
-    """{entity_id: {state, attributes}} for every demo with a profile, from the real printer's states (HA's list)."""
+def demo_states(states, P):
+    """{entity_id: {state, attributes}} for every demo with a profile, from the states of the real printer with entity
+    prefix P (HA's state list: [{entity_id, state, attributes}])."""
     real = {s["entity_id"]: s for s in states if s["entity_id"].split(".", 1)[1].startswith(P + "_") and not s["entity_id"].startswith(SKIP)
             and not s["entity_id"].endswith(SKIP_KEYS)}
     end = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=95)).isoformat(timespec="seconds")

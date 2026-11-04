@@ -1,4 +1,6 @@
 {
   "name": "Fabricon",
+  "zip_release": true,
+  "filename": "fabricon.zip",
   "render_readme": true
 }

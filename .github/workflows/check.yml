@@ -1,0 +1,27 @@
+# Every push: the card bundles and parses, the Python compiles, the generator runs without Home Assistant.
+name: Check
+
+on: [push, pull_request]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: python3 deploy.py --bundle
+      - run: python3 -m compileall -q custom_components deploy.py ha_client.py
+      - name: Generate a dashboard for a made-up printer
+        run: |
+          cd custom_components/fabricon
+          python3 -c "
+          from dashboard.build import build
+          c = build([{'P': 'x2d_test', 'DEV': 'dev1', 'serial': 'TEST', 'slug': 'test', 'model': 'X2D', 'name': 'Test'}],
+                    {'ams': True, 'exhaust_box': True, 'demo': True, 'bambuddy_url': 'http://bambuddy:8000'})
+          assert len(c['views']) == 7, len(c['views'])
+          print('ok', len(c['views']), 'views')"

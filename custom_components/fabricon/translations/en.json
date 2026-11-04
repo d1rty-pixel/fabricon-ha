@@ -1,6 +1,38 @@
 {
   "config": {
-    "step": {"user": {"title": "Fabricon", "description": "Uses the Bambuddy integration's URL and API key."}},
-    "abort": {"no_bambuddy": "Set up the Bambuddy integration first.", "already_configured": "Already set up."}
+    "step": {
+      "user": {
+        "title": "Fabricon",
+        "description": "Adds the Fabricon dashboard (sidebar: Fabricon) with a view for every BamBuddy printer. BamBuddy's URL and API key come from the BamBuddy integration.",
+        "data": {
+          "ams": "AMS support (units are detected automatically)",
+          "exhaust_box": "External Exhaust Fan kit fitted on the back",
+          "demo": "Demo printers (extra views in fixed states, to try the dashboard)"
+        }
+      }
+    },
+    "abort": {
+      "no_bambuddy": "Set up the BamBuddy integration first.",
+      "already_configured": "Already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Fabricon",
+        "description": "The dashboard is rebuilt when you save.",
+        "data": {
+          "ams": "AMS support (units are detected automatically)",
+          "exhaust_box": "External Exhaust Fan kit fitted on the back",
+          "demo": "Demo printers (extra views in fixed states, to try the dashboard)"
+        }
+      }
+    }
+  },
+  "services": {
+    "rebuild": {
+      "name": "Rebuild dashboard",
+      "description": "Regenerates the Fabricon dashboard (happens automatically at start and when a printer is added)."
+    }
   }
 }

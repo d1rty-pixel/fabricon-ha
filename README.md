@@ -10,85 +10,159 @@ A Home Assistant dashboard for Bambu Lab printers managed by [BamBuddy](https://
 - **Fly-out panels**: Filament (AMS), Temperatures, Fans, Extruder, Motion, HMS, AI monitoring, Telemetry,
   Maintenance.
 - **Control strip**: start, pause, resume, stop, speed.
-- One view per printer, found automatically in Home Assistant. Works on wall panels, desktops, tablets and phones.
+- One view per printer, found automatically and updated when you add one. Works on wall panels, desktops, tablets
+  and phones.
+
+Fabricon is a single Home Assistant integration. You install it and add it, and the dashboard **Fabricon** appears in
+the sidebar. There is nothing to run on your computer and no YAML to write.
 
 > **Note:** the 3D model is a Bambu Lab **X2D** (with optional AMS 2 Pro units and the External Exhaust Fan kit).
 > Other BamBuddy printers get a view as well, but the model still shows an X2D.
 
-## How it fits together
+## Contents
 
-| Part | Where it runs | What it does |
-|---|---|---|
-| `custom_components/fabricon/` | Home Assistant (integration, via HACS) | lets the dashboard reach BamBuddy's file / print queue API through HA's login (the BamBuddy API key never reaches the browser), and receives the card from `deploy.py` |
-| `card/` → `fabricon-card.js` | browser (Lovelace resource) | the 3D model, print dock, sidebar and control strip |
-| `dashboard/` | your computer | generates the dashboard (button-card templates, one view per printer) |
-| `deploy.py` | your computer | builds the card and the dashboard and installs both in Home Assistant through its API |
-
-The dashboard is generated from Python, so you run `deploy.py` once from any computer that can reach Home Assistant
-(Linux, macOS, Windows). It then lives in HA like any other dashboard. You don't need ssh or shell access to the HA
-host.
+- [Requirements](#requirements)
+- [Installation](#installation): [HACS](#method-1-hacs-recommended) ·
+  [manual from a release](#method-2-manual-install-from-a-release) · [from source](#method-3-from-source) ·
+  [add the integration](#add-the-integration)
+- [Options](#options) · [Updating](#updating) · [Uninstalling](#uninstalling)
+- [Using the dashboard](#using-the-dashboard)
+- [Troubleshooting](#troubleshooting) · [Known issues](#known-issues) · [Development](#development) ·
+  [License](#license)
 
 ## Requirements
 
-In **Home Assistant**:
+| What | Needed for | Notes |
+|---|---|---|
+| Home Assistant | everything | tested with 2026.10; use a current release |
+| [BamBuddy](https://github.com/maziggy/bambuddy) | printer data, files, print queue | running, with your printer(s) added |
+| [BamBuddy integration](https://github.com/Spegeli/hacs_bambuddy) | the printer's entities in HA | set up with BamBuddy's URL and API key **before** Fabricon |
+| [button-card](https://github.com/custom-cards/button-card) 7.x | the panels and keys | HACS → *Frontend*, or by hand (see below) |
+| [kiosk-mode](https://github.com/NemesisRE/kiosk-mode) | optional | hides HA's header and sidebar on the Fabricon dashboard |
+| A browser with internet access | the 3D model | three.js is loaded from jsDelivr |
 
-- [HACS](https://hacs.xyz)
-- [BamBuddy](https://github.com/maziggy/bambuddy) running with your printer(s) added, and the
-  [BamBuddy integration](https://github.com/Spegeli/hacs_bambuddy) set up (HACS)
-- [button-card](https://github.com/custom-cards/button-card) 7.x (HACS)
-- optional: [kiosk-mode](https://github.com/NemesisRE/kiosk-mode) (HACS), which hides HA's header and sidebar on
-  this dashboard
-- an **administrator** account. Its token is used to create the dashboard and upload the card.
+Methods 1 and 2 need no Python, no ssh and no terminal. Everything is done in Home Assistant's web interface plus a
+way to copy files for method 2.
 
-On **your computer**:
+### button-card without HACS
 
-- Python 3.9 or newer, nothing else. Optional: Node.js, which `deploy.py` uses to syntax-check the card.
-
-The **browser** loads three.js from jsDelivr, so the dashboard needs internet access.
+1. Download `button-card.js` from the [button-card releases](https://github.com/custom-cards/button-card/releases).
+2. Copy it to `/config/www/button-card.js` on your HA host. If the `www` folder doesn't exist yet, create it and
+   restart Home Assistant once.
+3. Enable *Advanced mode* in your user profile. Then go to *Settings → Dashboards → ⋮ (top right) → Resources →
+   Add resource*, enter the URL `/local/button-card.js` and choose the type *JavaScript module*.
 
 ## Installation
 
-### 1. Install the integration (HACS)
+Pick **one** of the three methods. Then [add the integration](#add-the-integration).
 
-1. In HACS, open the menu (⋮, top right) → *Custom repositories*. Add `https://github.com/d1rty-pixel/fabricon-ha`
-   with type **Integration**.
-2. Search for **Fabricon** in HACS and download it.
-3. Restart Home Assistant. Step 2 can do this for you.
+### Method 1: HACS (recommended)
 
-### 2. Run the setup
+You need [HACS](https://hacs.xyz/docs/use/). HACS also handles updates for you.
+
+1. Open **HACS** in the sidebar.
+2. Click **⋮** (top right) → **Custom repositories**.
+3. Enter `https://github.com/d1rty-pixel/fabricon-ha`, choose the type **Integration** and click **Add**.
+4. Search HACS for **Fabricon**, open it and click **Download**. Choose the latest version.
+5. **Restart Home Assistant**: *Settings → System → ⋮ (top right) → Restart Home Assistant*.
+
+If HACS shows an error at step 3 or 4, use method 2.
+
+### Method 2: Manual install from a release
+
+For when HACS isn't available or doesn't work. You need a way to put files into Home Assistant's `/config`
+folder. Any of these works:
+
+- the **File editor** add-on, or **Studio Code Server** (*Settings → Add-ons → Add-on store*). Both can upload files.
+- the **Samba share** add-on: open `\\homeassistant\config` (Windows) or `smb://homeassistant.local/config`
+  (macOS / Linux).
+- `scp` or the **SSH** add-on, if you're used to it
+- on Home Assistant Container / Core: the configuration folder on the machine itself
+
+Steps:
+
+1. Open the [latest release](https://github.com/d1rty-pixel/fabricon-ha/releases/latest) and download
+   **`fabricon.zip`**. Don't use "Source code": it doesn't contain the built card.
+2. In `/config`, create the folder `custom_components` if it doesn't exist, and inside it the folder `fabricon`.
+3. Unzip `fabricon.zip` **into** `/config/custom_components/fabricon/`. The result must look like this:
+
+   ```
+   /config/custom_components/fabricon/
+   ├── __init__.py
+   ├── manifest.json
+   ├── dashboard/
+   ├── frontend/fabricon-card.js
+   └── …
+   ```
+
+   Make sure there is no extra `fabricon` folder in between (`…/fabricon/fabricon/manifest.json` is wrong).
+4. **Restart Home Assistant**.
+
+With the File editor, upload the zip to `/config/custom_components/fabricon/`. The File editor can't unzip, so
+use Studio Code Server or Samba for this method if you can.
+
+### Method 3: From source
+
+For the latest unreleased code, or if you want to change something. You need **git** (or the ZIP of the
+repository) and **Python 3.9+** to build the card. Optional: **Node.js**, which checks the card's syntax.
+
+Installing the tools:
+
+- **Windows**: install Python from [python.org](https://www.python.org/downloads/) (tick "Add python.exe to
+  PATH") or from the Microsoft Store, and [Git for Windows](https://git-scm.com/download/win). In the commands
+  below, use `py` instead of `python3`.
+- **macOS**: run `xcode-select --install` (this includes git and python3), or `brew install python git`.
+- **Debian / Ubuntu**: `sudo apt install python3 git`.
+
+Build the integration:
 
 ```sh
 git clone https://github.com/d1rty-pixel/fabricon-ha.git
 cd fabricon-ha
-python3 deploy.py setup
+python3 deploy.py --bundle
 ```
 
-On Windows, use `py deploy.py setup`. You can also download the repository as a ZIP from GitHub instead of cloning it.
+This writes the card to `custom_components/fabricon/frontend/fabricon-card.js`. Copy the whole folder
+`custom_components/fabricon` to `/config/custom_components/fabricon` on your HA host, the same way as in method 2.
+Then **restart Home Assistant**.
 
-The setup:
+### Add the integration
 
-1. asks for your Home Assistant URL (e.g. `http://192.168.1.10:8123`)
-2. asks for a **long-lived access token**: in HA click your profile (bottom left) → *Security* → *Long-lived access
-   tokens* → *Create token*. The token is stored in `~/.config/homeassistant/token` and only readable by you.
-3. checks that BamBuddy, button-card and kiosk-mode are there
-4. finds your printers in BamBuddy and detects your AMS
-5. asks about the External Exhaust Fan kit, the demo printers and BamBuddy's URL
-6. writes everything to `dashboard/settings_local.py`
-7. then installs: it sets up the Fabricon integration (restarting HA if needed), uploads the card and creates the
-   dashboard **Fabricon** at `/fabricon-dashboard`.
+1. Open *Settings → Devices & services → **Add integration*** and search for **Fabricon**. If it isn't listed,
+   reload the page (Ctrl+F5) and check that Home Assistant was restarted after the install.
+2. Tick what applies (you can change it later, see [Options](#options)):
+   - **AMS support**: leave it on if you have an AMS. Units are detected automatically.
+   - **External Exhaust Fan kit**: if it is fitted on the back. HA can't detect it.
+   - **Demo printers**: extra views with made-up printers in fixed states, to try the dashboard.
+3. Click **Submit**. **Fabricon** appears in the sidebar, with one tab per printer.
 
-Open `http://<your-ha>:8123/fabricon-dashboard/` and pick a file on the printer's USB stick.
+If you get *"Set up the BamBuddy integration first"*, set up the BamBuddy integration and try again.
+
+## Options
+
+*Settings → Devices & services → Fabricon → **Configure***: AMS support, External Exhaust Fan kit and demo
+printers. The dashboard is rebuilt when you save.
+
+The dashboard rebuilds itself at every start and when BamBuddy adds a printer. To rebuild it by hand, use
+*Developer tools → Actions → **Fabricon: Rebuild dashboard***.
+
+The dashboard is generated, so it can't be edited in HA's dashboard editor. Your changes would be lost at the next
+rebuild anyway. To change it, change the code (see [Development](#development)).
 
 ## Updating
 
-```sh
-git pull
-python3 deploy.py install
-```
+- **HACS**: when HACS offers an update for Fabricon, click *Update* and restart Home Assistant.
+- **Manual / from source**: replace the contents of `/config/custom_components/fabricon/` with the new release or
+  build. Delete the old files first, then restart Home Assistant.
 
-Update the integration through HACS when it offers an update, then run `python3 deploy.py install`.
+Then reload the dashboard in your browsers. On wall panels, clear the browser cache if the old version keeps
+showing.
 
-After you add a printer to BamBuddy, run `python3 deploy.py config`. Views are created at build time.
+## Uninstalling
+
+1. *Settings → Devices & services → Fabricon → ⋮ → **Delete***. The dashboard disappears right away.
+2. Remove the files: in HACS (*Fabricon → ⋮ → Remove*), or delete `/config/custom_components/fabricon/`.
+3. Restart Home Assistant.
 
 ## Using the dashboard
 
@@ -129,91 +203,61 @@ nozzle switch) are locked but stay visible. Unknown values show as "—".
 **Screen sizes**: below 1500 px the panels slide over the model. Below 1100 px the dock moves under the model. On
 phones (< 600 px) the model has a fixed view and swipes scroll the page.
 
-**Editing the dashboard in HA**: kiosk-mode hides HA's own header. Open the dashboard with `?disable_km` to get it
-back. Don't edit the config in HA's UI, though: the next `deploy.py` overwrites it. Change the Python in
-`dashboard/` instead.
+**Kiosk mode**: if kiosk-mode is installed, HA's header and sidebar are hidden on this dashboard. Add `?disable_km`
+to the URL to see them.
 
-## Configuration reference
+## Troubleshooting
 
-`python3 deploy.py setup` writes `dashboard/settings_local.py`. You can also edit it by hand: any value from
-`dashboard/settings.py` can be overridden there. The file is not in git.
-
-| Setting | Default | Meaning |
-|---|---|---|
-| `HA_URL` | `http://homeassistant.local:8123` | Home Assistant |
-| `HA_TOKEN` | `~/.config/homeassistant/token` | file with a long-lived access token of an admin user |
-| `BAMBUDDY_URL` | `http://homeassistant.local:8000` | link on the Maintenance panel |
-| `P` / `DEV` | placeholders | main printer's entity prefix and HA device id: its view comes first, and the demo printers copy it |
-| `HAS_AMS` | `True` | AMS support. The units themselves (up to 4) are detected at runtime |
-| `EXHAUST_BOX` | `True` | External Exhaust Fan kit on the back (HA can't detect it) |
-| `DEMO_PRINTERS` | `False` | add demo printer views |
-| `URL_PATH` / `TITLE` / `ICON` | `fabricon-dashboard` / `Fabricon` / `mdi:hammer-wrench` | the dashboard (the path needs a hyphen) |
-| `SSH` / `SSH_SUDO` | `None` / `True` | optional, see below |
-
-### Optional: ssh instead of HACS
-
-If you have ssh access to the HA host with write access to `/config` (directly or through passwordless `sudo`),
-`deploy.py` can copy the integration itself and write the card over ssh. You then don't need HACS for Fabricon:
-
-```python
-SSH = ["ssh", "-o", "BatchMode=yes", "root@192.168.1.10"]
-SSH_SUDO = False          # True if the user needs sudo to write /config
-```
-
-The setup asks about this as well. With ssh, `python3 deploy.py install` also updates the integration and restarts
-HA when it changed.
-
-### `deploy.py`
-
-```
-python3 deploy.py setup        first time: ask for the settings, then install
-python3 deploy.py install      integration entry (+ files and restart with ssh), card, dashboard, demo states
-python3 deploy.py              card + dashboard (the usual update after changing the code)
-python3 deploy.py card         only the card
-python3 deploy.py config       only the dashboard config
-python3 deploy.py proxy        with ssh: copy the integration (restart HA when it reports changes)
-python3 deploy.py demo         set the demo printers' states (needs DEMO_PRINTERS and P)
-python3 deploy.py --stl FILE   upload FILE as the model shown on the bed (/config/www/prints/current.stl)
-python3 deploy.py --dump       print the generated config as YAML, deploy nothing (needs PyYAML)
-python3 deploy.py --bundle     only build dist/fabricon-card.js and syntax-check it
-```
-
-### Demo printers
-
-With `DEMO_PRINTERS = True` and `P` set to a real printer, six extra views show made-up printers in fixed states:
-offline, printing, paused, finished, failed and no data. They are useful for checking the layout without
-waiting for a real print. Their entities exist only in HA's state machine. They are copies of your printer's
-states with the demo profile on top. The fabricon integration sets them at every HA start. To create or refresh
-them, run:
-
-```sh
-python3 deploy.py demo
-python3 deploy.py config
-```
+| Problem | Fix |
+|---|---|
+| Fabricon isn't listed under *Add integration* | Check that Home Assistant was restarted after the install. Check that `/config/custom_components/fabricon/manifest.json` exists (not one folder deeper). Reload the page with Ctrl+F5. |
+| *"Set up the BamBuddy integration first"* | Fabricon reads BamBuddy's URL and API key from the BamBuddy integration. Set that up first. |
+| The sidebar has no **Fabricon** entry | Check the log (*Settings → System → Logs*, search "fabricon"). *"a dashboard at /fabricon-dashboard already exists"*: delete that dashboard under *Settings → Dashboards*, then reload Fabricon (*Devices & services → Fabricon → ⋮ → Reload*). |
+| *"Custom element doesn't exist: fabricon-card"* | Reload the page with the cache cleared. *"…fabricon-card.js is missing"* in the log means the files came from "Source code" instead of `fabricon.zip`. Install again with method 2 or 3. |
+| *"Custom element doesn't exist: button-card"* | button-card isn't installed or its resource is missing (see [Requirements](#requirements)). |
+| The model stays on "Loading model" | The browser can't reach `cdn.jsdelivr.net` (offline network, content blocker). |
+| A printer has no view | Check that it shows up in BamBuddy and in the BamBuddy integration. Fabricon picks it up within a few seconds. Otherwise run *Fabricon: Rebuild dashboard*. |
+| The USB stick list stays empty | Check that the stick is inserted. Check that BamBuddy can list the printer's files (BamBuddy → printer → Files). |
 
 ## Known issues
 
-- BamBuddy can't print a file directly from the printer's USB stick. The proxy therefore copies the file into
+- BamBuddy can't print a file directly from the printer's USB stick. Fabricon therefore copies the file into
   BamBuddy's library, queues it there and removes the library copy after the file has been sent to the printer.
 - After a job, the exhaust box fan can keep running for several minutes while BamBuddy reports 0 %.
 - HA reports no toolhead position. While printing, the head follows the G-code path of the current layer, not a
   live readout.
-
-## Troubleshooting
-
-- **"Home Assistant has no Fabricon upload endpoint"**: the Fabricon integration is not set up. Download it in
-  HACS, restart HA and run `python3 deploy.py install`.
-- **"the access token was refused"**: create a new token and delete `~/.config/homeassistant/token`. The setup
-  then asks for it again.
-- **"set up the BamBuddy integration first"**: Fabricon reads BamBuddy's URL and API key from that integration.
-- **The dashboard shows "Custom element doesn't exist: fabricon-card"**: reload the page with the cache cleared. If
-  that doesn't help, restart HA once: HA only serves `/local/` when the `www` folder existed at startup.
-- **A printer has no view**: run `python3 deploy.py config` after adding it to BamBuddy.
+- Home Assistant has no official way for an integration to add a dashboard. Fabricon uses the dashboard
+  internals of HA's Lovelace component, so a future HA release may need a Fabricon update.
 
 ## Development
 
-See [CLAUDE.md](CLAUDE.md) for the code layout and the conventions. In short: `card/NN-topic.js` files are
-concatenated in name order into `dist/`, and the dashboard is generated from `dashboard/*.py`. Never edit `dist/`.
+| What | Where |
+|---|---|
+| the 3D card, concatenated in name order into `custom_components/fabricon/frontend/` | `card/NN-topic.js` |
+| the dashboard generator (pure Python, runs inside HA) | `custom_components/fabricon/dashboard/` |
+| integration: setup, options, dashboard + card registration, BamBuddy proxy | `custom_components/fabricon/*.py` |
+| developer deploy over ssh | `deploy.py`, settings in `deploy_local.py` (not in git) |
+
+`deploy.py` copies your working copy to a test instance. It needs Python 3.9+, ssh with write access to `/config`
+and a long-lived access token in `~/.config/homeassistant/token`. Optional: Node.js and PyYAML (`--dump`).
+
+```python
+# deploy_local.py
+HA_URL = "http://192.168.1.10:8123"
+SSH = ["ssh", "-o", "BatchMode=yes", "root@192.168.1.10"]
+SSH_SUDO = False
+```
+
+```
+python3 deploy.py              bundle the card, copy changed files, rebuild the dashboard
+python3 deploy.py --restart    same, and restart HA when the integration's own code changed
+python3 deploy.py --stl FILE   also upload FILE as the job model shown on the bed
+python3 deploy.py --dump       print the generated dashboard as YAML
+python3 deploy.py --bundle     only bundle the card
+```
+
+Releases: push a tag like `v0.2.0`. The release workflow bundles the card, sets the version and publishes
+`fabricon.zip`, which HACS installs. See [CLAUDE.md](CLAUDE.md) for the code conventions.
 
 ## License
 

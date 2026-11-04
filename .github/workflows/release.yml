@@ -1,0 +1,42 @@
+# A tag v1.2.3 builds the integration with the bundled card and publishes it as a GitHub release (fabricon.zip),
+# which HACS installs. Manual installs use the same zip.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Bundle the card
+        run: python3 deploy.py --bundle
+      - name: Set the version from the tag
+        run: |
+          python3 - <<'PY'
+          import json, os
+          p = "custom_components/fabricon/manifest.json"
+          m = json.load(open(p))
+          m["version"] = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          open(p, "w").write(json.dumps(m, indent=2) + "\n")
+          PY
+      - name: Zip the integration
+        run: |
+          cd custom_components/fabricon
+          find . -name __pycache__ -prune -exec rm -rf {} +
+          zip -r ../../fabricon.zip .
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: fabricon.zip
+          generate_release_notes: true

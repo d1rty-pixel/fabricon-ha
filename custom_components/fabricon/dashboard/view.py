@@ -3,7 +3,8 @@ fly-out sidebar holds the panels (panels.py) and whose control strip holds the f
 from . import panels
 from .controls import header, press, speed_bars, status_bar
 from .lib import SHARED_CSS, bc, css, e
-from .settings import EXHAUST_BOX, HAS_AMS, P, P_SERIAL, STL
+from . import settings
+from .settings import P, P_SERIAL, STL
 
 
 def footer():
@@ -16,8 +17,9 @@ def footer():
 
 
 def model(stl_version):
-    return {"type": "custom:fabricon-card", "printer": P, "ams": HAS_AMS, "exhaust_box": EXHAUST_BOX,
-            "stl": f"/local/{STL}?v={stl_version}",
+    o = settings.OPTIONS
+    return {"type": "custom:fabricon-card", "printer": P, "ams": o["ams"], "exhaust_box": o["exhaust_box"],
+            **({"stl": f"/local/{STL}?v={stl_version}"} if stl_version else {}),
             "height": "fill", "serial": P_SERIAL, "camera": e("camera", "camera"),
             "panels": [{**p(), "gap": p()["key"] in panels.GROUP_STARTS} for p in panels.PANELS], "footer": footer(), "footer_columns": "2.6fr 1fr 1fr 2.1fr 3.2fr",
             # phones: Start, Stop / Pause, Resume, Speed (2 + 2 / 1 + 1 + 2 of 4 columns)

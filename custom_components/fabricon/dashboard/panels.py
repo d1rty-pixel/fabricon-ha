@@ -6,7 +6,8 @@ __AMS__ / __AMS_ID__ / __AMS_DEV__), the Print dock is the card's own (serial in
 from .controls import firmware_read, fan_card, heat_card, key, load_btn, mode_keys, read
 from .lib import (CHAMFER, JS_BAR, JS_FMT, JS_HMS, JS_STATUS, JS_TIME, NO_ACTION, NO_CHAMFER, SHARED_CSS, a, bc, call, css,
                   e, grid, js, stack, tab)
-from .settings import BAMBUDDY_URL, DEV, DEV_AMS, EXHAUST_BOX, HAS_AMS, P_SERIAL
+from . import settings
+from .settings import DEV, DEV_AMS, P_SERIAL
 
 HEATERS = [
     ("Nozzle L", "left_nozzle_temperature", "left_nozzle_target_temperature", "mdi:printer-3d-nozzle-heat"),
@@ -25,7 +26,7 @@ def temps():
 
 
 def fans():
-    fs = [("part_cooling_fan", "Part"), *[("exhaust_fan", "Exhaust")][:EXHAUST_BOX], ("left_auxiliary_fan", "Aux L"),
+    fs = [("part_cooling_fan", "Part"), *[("exhaust_fan", "Exhaust")][:settings.OPTIONS["exhaust_box"]], ("left_auxiliary_fan", "Aux L"),
           ("right_auxiliary_fan", "Aux R"), ("ventilation", "Ventilation", "mdi:air-filter")]
     duct = mode_keys(e("select", "airduct_mode"), [("cooling", "Cooling", "mdi:snowflake", "AIR DUCT", None),
                                                    ("heating", "Heating", "mdi:fire", "AIR DUCT", "var(--fab-o)")])
@@ -217,7 +218,7 @@ def ams():
            variables={"color": "var(--fab-o)", "enabled": js(JS_STATUS + "return !active && s !== 'offline';")},
            tap_action=call("bambuddy", "unload_filament", device_id=DEV, confirm="Unload the filament now?")))
     slots = stack(tab("AMS __AMS_ID__ // Slots"), *[spool(a("sensor", f"slot_{i}"), f"__AMS_ID__{i}") for i in range(1, 5)])
-    return {**panel("Filament", "ams", "Filament // A-00", "mdi:tray-full", ext), "per_ams": [slots, ams_climate()] if HAS_AMS else []}
+    return {**panel("Filament", "ams", "Filament // A-00", "mdi:tray-full", ext), "per_ams": [slots, ams_climate()] if settings.OPTIONS["ams"] else []}
 
 
 # ------------------------------------------------------------------ system
@@ -284,8 +285,9 @@ def maintenance():
     note = bc("fab_base", show_icon=False, show_name=False, show_state=False, styles={"card": css({"height": "auto", "padding": "12px 14px"})},
               custom_fields={"n": '<div style="font-family:var(--fab-mono);font-size:11px;line-height:1.6;color:var(--fab-dim);text-align:left">'
                                   '▸ TAP A TASK = MARK AS DONE<br>▸ INTERVALS ARE MANAGED BY BAMBUDDY<br>▸ REFRESHED EVERY 10 MIN + AFTER EACH PRINT</div>'})
-    link = bc("fab_key", name="Open Bambuddy", icon="mdi:open-in-new", tap_action={"action": "url", "url_path": BAMBUDDY_URL})
-    return panel("Maintenance", "maintenance", "Maintenance // W-00", "mdi:wrench-cog-outline", tasks, stack(stats, note, link))
+    url = settings.OPTIONS["bambuddy_url"]
+    link = [bc("fab_key", name="Open Bambuddy", icon="mdi:open-in-new", tap_action={"action": "url", "url_path": url})] if url else []
+    return panel("Maintenance", "maintenance", "Maintenance // W-00", "mdi:wrench-cog-outline", tasks, stack(stats, note, *link))
 
 
 # Rail order follows the work at the printer, in groups (a gap before each group's first panel):

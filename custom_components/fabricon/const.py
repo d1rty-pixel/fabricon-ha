@@ -1,0 +1,2 @@
+"""Shared names."""
+DOMAIN = "fabricon"
