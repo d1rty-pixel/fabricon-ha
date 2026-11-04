@@ -54,6 +54,22 @@ def _path(value):
     return value
 
 
+def _denied(method, path, status):
+    """Which permission of the BamBuddy API key (BamBuddy -> Settings -> API Keys) a refused call needs."""
+    if status == 401:
+        return "the API key was refused; enter a valid key in the BamBuddy integration"
+    if method == "POST" and path.startswith("/library"):
+        need = "Manage Library"
+    elif method == "POST" and path.startswith("/queue"):
+        need = "Manage Queue"
+    elif "/files" in path:
+        need = "Control Printer"
+    else:
+        need = "Read Status"
+    return (f"the API key lacks the '{need}' permission (or its owner may not do this). Create a key with Read Status, "
+            "Control Printer, Manage Queue, Manage Library and Manage Maintenance and enter it in the BamBuddy integration")
+
+
 class Bambuddy:
     def __init__(self, hass):
         entries = hass.config_entries.async_entries("bambuddy")
@@ -75,6 +91,8 @@ class Bambuddy:
                         text = json.loads(body).get("detail", text)
                     except (ValueError, AttributeError):
                         pass
+                    if r.status in (401, 403):
+                        text = _denied(method, path, r.status)
                     raise Upstream(r.status if r.status < 500 else 502, f"Bambuddy: {text}")
                 if raw:
                     return body, r.headers.get("Content-Type", "application/octet-stream")

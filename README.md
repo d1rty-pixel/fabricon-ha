@@ -21,7 +21,7 @@ the sidebar. There is nothing to run on your computer and no YAML to write.
 
 ## Contents
 
-- [Requirements](#requirements)
+- [Requirements](#requirements) · [BamBuddy API key](#bambuddy-api-key)
 - [Installation](#installation): [HACS](#method-1-hacs-recommended) ·
   [manual from a release](#method-2-manual-install-from-a-release) · [from source](#method-3-from-source) ·
   [add the integration](#add-the-integration)
@@ -36,13 +36,49 @@ the sidebar. There is nothing to run on your computer and no YAML to write.
 |---|---|---|
 | Home Assistant | everything | tested with 2026.10; use a current release |
 | [BamBuddy](https://github.com/maziggy/bambuddy) | printer data, files, print queue | running, with your printer(s) added |
-| [BamBuddy integration](https://github.com/Spegeli/hacs_bambuddy) | the printer's entities in HA | set up with BamBuddy's URL and API key **before** Fabricon |
+| [BamBuddy integration](https://github.com/Spegeli/hacs_bambuddy) | the printer's entities in HA | set up **before** Fabricon, with an API key that has the permissions [below](#bambuddy-api-key) |
 | [button-card](https://github.com/custom-cards/button-card) 7.x | the panels and keys | HACS → *Frontend*, or by hand (see below) |
 | [kiosk-mode](https://github.com/NemesisRE/kiosk-mode) | optional | hides HA's header and sidebar on the Fabricon dashboard |
 | A browser with internet access | the 3D model | three.js is loaded from jsDelivr |
 
 Methods 1 and 2 need no Python, no ssh and no terminal. Everything is done in Home Assistant's web interface plus a
 way to copy files for method 2.
+
+### BamBuddy API key
+
+Fabricon has **no API key of its own**. It uses the URL and API key you entered in the BamBuddy integration, and
+you don't type them in again. To list the USB stick and start prints, Fabricon needs **two more permissions on that
+key than the BamBuddy integration itself asks for**:
+
+| Permission in BamBuddy | Needed by | For |
+|---|---|---|
+| **Read Status** | BamBuddy integration + Fabricon | everything shown; the loaded filaments for the mapping |
+| **Control Printer** | BamBuddy integration + Fabricon | the controls; listing and reading the files on the printer's USB stick; clearing the plate |
+| **Manage Maintenance** | BamBuddy integration | marking maintenance done |
+| **Manage Queue** | Fabricon | START: queueing the job |
+| **Manage Library** | Fabricon | START: BamBuddy can only queue files from its library, so the file is copied there first (removed again after it was sent) |
+
+**Setting up a new key with all five permissions:**
+
+1. In BamBuddy, open **Settings → API Keys → Create Key**.
+2. Name it, e.g. `Home Assistant`, and tick **Read Status, Control Printer, Manage Queue, Manage Library and
+   Manage Maintenance**.
+3. Copy the key. BamBuddy shows it only once.
+4. In Home Assistant: *Settings → Devices & services → BamBuddy → ⋮ → **Reconfigure***, and enter the new key. If
+   you're setting up the BamBuddy integration for the first time, enter it there instead.
+
+**Already have a key?** BamBuddy can't add permissions to an existing key. If yours was made for the BamBuddy
+integration with only its three permissions, create a new one as above and enter it in the integration.
+Everything shows anyway, but START and the USB list report *"the API key lacks the '…' permission"*.
+
+Also good to know (from BamBuddy):
+
+- With **authentication** on in BamBuddy (*Settings → Authentication*), a key can do at most what its owner may do.
+  Create it as a user who is allowed to control printers, use the queue and the library.
+- With authentication off, BamBuddy ignores permissions entirely. That works, but anyone on your network can then
+  control your printers.
+- The printer must be in **LAN mode with developer mode** on. Otherwise the printer ignores the commands BamBuddy
+  passes on (see the BamBuddy integration's troubleshooting).
 
 ### button-card without HACS
 
@@ -136,7 +172,9 @@ Then **restart Home Assistant**.
    - **Demo printers**: extra views with made-up printers in fixed states, to try the dashboard.
 3. Click **Submit**. **Fabricon** appears in the sidebar, with one tab per printer.
 
-If you get *"Set up the BamBuddy integration first"*, set up the BamBuddy integration and try again.
+If you get *"Set up the BamBuddy integration first"*, set up the BamBuddy integration and try again. Fabricon asks
+for no URL or key: it uses the BamBuddy integration's. Check that key's permissions
+([BamBuddy API key](#bambuddy-api-key)).
 
 ## Options
 
@@ -217,7 +255,10 @@ to the URL to see them.
 | *"Custom element doesn't exist: button-card"* | button-card isn't installed or its resource is missing (see [Requirements](#requirements)). |
 | The model stays on "Loading model" | The browser can't reach `cdn.jsdelivr.net` (offline network, content blocker). |
 | A printer has no view | Check that it shows up in BamBuddy and in the BamBuddy integration. Fabricon picks it up within a few seconds. Otherwise run *Fabricon: Rebuild dashboard*. |
-| The USB stick list stays empty | Check that the stick is inserted. Check that BamBuddy can list the printer's files (BamBuddy → printer → Files). |
+| *"the API key lacks the '…' permission"* | The BamBuddy key is missing a permission. Create a new key with all five permissions and enter it in the BamBuddy integration (see [BamBuddy API key](#bambuddy-api-key)). |
+| *"the API key was refused"* | The key was deleted or mistyped in BamBuddy. Create a new one and enter it in the BamBuddy integration (*Reconfigure*). |
+| The USB stick list stays empty | Check that the stick is inserted. Check that BamBuddy can list the printer's files (BamBuddy → printer → Files). Check that the key has **Control Printer**. |
+| START does nothing or the job stays in BamBuddy's queue | BamBuddy only sends a queued job once the plate is marked as cleared and the printer is idle. Check BamBuddy's queue page for the reason it shows. |
 
 ## Known issues
 
