@@ -1,0 +1,20 @@
+{
+  "domain": "fabricon",
+  "name": "Fabricon",
+  "after_dependencies": [
+    "bambuddy"
+  ],
+  "codeowners": [
+    "@d1rty-pixel"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http"
+  ],
+  "documentation": "https://github.com/d1rty-pixel/fabricon-ha",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/d1rty-pixel/fabricon-ha/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.0.0"
+}

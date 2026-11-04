@@ -1,0 +1,6 @@
+/* Cut corners with the yellow / dim corner marks of every panel and key */
+ha-card { clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px)); }
+ha-card::after { content: ''; position: absolute; top: 0; right: 0; width: 16px; height: 16px; background: var(--fab-y);
+  clip-path: polygon(0 0, 4px 0, 100% 12px, 100% 100%); pointer-events: none; }
+ha-card::before { content: ''; position: absolute; bottom: 0; left: 0; width: 16px; height: 16px; background: rgba(255,180,0,.55);
+  clip-path: polygon(0 0, 100% 100%, 12px 100%, 0 4px); pointer-events: none; }

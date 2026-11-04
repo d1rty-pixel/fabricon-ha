@@ -1,0 +1,3 @@
+/* Animations the cards use */
+@keyframes fab-blink { 50% { opacity: .25; } }
+@keyframes fab-spin { to { transform: rotate(360deg); } }
