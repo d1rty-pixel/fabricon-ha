@@ -16,6 +16,12 @@ A Home Assistant dashboard for Bambu Lab printers managed by [BamBuddy](https://
 Fabricon is a single Home Assistant integration. You install it and add it, and the dashboard **Fabricon** appears in
 the sidebar. There is nothing to run on your computer and no YAML to write.
 
+[![Open your Home Assistant instance and open the Fabricon repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=d1rty-pixel&repository=fabricon-ha&category=integration)
+[![Open your Home Assistant instance and start setting up Fabricon.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=fabricon)
+
+The first button installs Fabricon through HACS, the second adds it after the restart (details in
+[Installation](#installation)).
+
 > **Note:** the 3D model is a Bambu Lab **X2D** (with optional AMS 2 Pro units and the External Exhaust Fan kit).
 > Other BamBuddy printers get a view as well, but the model still shows an X2D.
 
@@ -96,6 +102,16 @@ Pick **one** of the three methods. Then [add the integration](#add-the-integrati
 
 You need [HACS](https://hacs.xyz/docs/use/). HACS also handles updates for you.
 
+**Quick way:** click this button. It opens Fabricon in HACS on your own Home Assistant (the first time, it asks
+for your Home Assistant's address and remembers it):
+
+[![Open your Home Assistant instance and open the Fabricon repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=d1rty-pixel&repository=fabricon-ha&category=integration)
+
+Click **Add** when HACS asks whether to add the repository, then **Download**, then restart Home Assistant
+(*Settings → System → ⋮ (top right) → Restart Home Assistant*).
+
+**By hand**, if the button doesn't work:
+
 1. Open **HACS** in the sidebar.
 2. Click **⋮** (top right) → **Custom repositories**.
 3. Enter `https://github.com/d1rty-pixel/fabricon-ha`, choose the type **Integration** and click **Add**.
@@ -164,7 +180,9 @@ Then **restart Home Assistant**.
 
 ### Add the integration
 
-1. Open *Settings → Devices & services → **Add integration*** and search for **Fabricon**. If it isn't listed,
+[![Open your Home Assistant instance and start setting up Fabricon.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=fabricon)
+
+1. Click the button above, or open *Settings → Devices & services → **Add integration*** and search for **Fabricon**. If it isn't listed,
    reload the page (Ctrl+F5) and check that Home Assistant was restarted after the install.
 2. Tick what applies (you can change it later, see [Options](#options)):
    - **AMS support**: leave it on if you have an AMS. Units are detected automatically.
