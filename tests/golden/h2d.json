@@ -3576,7 +3576,7 @@
            "primary": true
           }
          ],
-         "mesh": "generic",
+         "mesh": "bambu.h2d",
          "model": "H2D",
          "profile": "bambu.h2d",
          "provider": "bambuddy",

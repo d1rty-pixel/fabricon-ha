@@ -13,7 +13,7 @@
 // states made up from the printer's spec for the chosen state. Services are logged, the print proxy answers 404.
 const q = new URLSearchParams(location.search), fixture = q.get("fixture") || "x2d", state = q.get("state") || "printing";
 const bar = document.getElementById("bar");
-bar.innerHTML = ["x2d", "x1c", "p1s", "a1", "h2d"].map((f) => `<a href="?fixture=${f}&state=${state}">${f}</a>`).join(" ")
+bar.innerHTML = ["x2d", "x1c", "p1s", "p2s", "a1", "h2d"].map((f) => `<a href="?fixture=${f}&state=${state}">${f}</a>`).join(" ")
   + " · " + ["printing", "idle", "paused", "finished", "offline"].map((s) => `<a href="?fixture=${fixture}&state=${s}">${s}</a>`).join(" ")
   + ` · mesh <input id="mesh" size="12" placeholder="(spec)" value="${q.get("mesh") || ""}">`;
 document.getElementById("mesh").addEventListener("change", (e) => { q.set("mesh", e.target.value); location.search = q; });

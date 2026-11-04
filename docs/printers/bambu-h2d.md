@@ -171,3 +171,20 @@ Right inner lining: upper cover with two servos + wind blocker; PTC heating plat
 3. Look: light silver front pillars, left-hinged tinted glass door with right handle, black base ring, glass lid, side panels with glass windows (none on the H2S, dark on the H2C), dark rear panel with louvres, mesh grilles, purge chute (x -84), spool holder base on the rear left edge.
 4. Two LED strips on the left / right top crossbeams (BamBuddy gives one light entity), left aux fan, right exhaust fan, 5015 part fan; cameras: live, toolhead, nozzle, BirdsEye (one camera entity); 5 in touchscreen, start/pause button top right of the front cover, USB-A.
 5. Heights (TIP ~ 480, floor ~ 45), toolhead size, screen and USB positions and the H2C rack coordinates are estimates; the wiki gives no drawing - get a side-on photo before fixing them.
+
+## 15. Photo check for the 3D model (card/models/bambu.h2d)
+
+Read in Chrome on wiki.bambulab.com (`/en/h2d` overview photo with labels, `/en/h2/manual/h2d-intro` hotend / toolhead photos). Confidence: photo = seen, estimate = derived.
+
+| Item | Finding | Confidence |
+|---|---|---|
+| Overview photo (3/4 from the right) | Black glass door between narrow silver front pillars, silver-grey side panels, black base ring, black top frame with a front header; side panel window = rounded rectangle, upper-middle of the panel (~ top 20 % to ~ 60 % of the panel height, nearly the whole depth); screen = dark square pod at the top-left of the front; black bump at the rear of the top | photo; window size estimate (380 x 237) |
+| Overview labels | Screen top-left, X-axis linear rail, live view camera inside at the top left under the header, auxiliary part cooling fan on the left wall at mid height, heatbed, status indicator bar under the front edge of the bed, purge wiper at the rear left of the chamber (next to the chute) | photo |
+| Toolhead (hotend photo) | Translucent dark-grey cover (extruder visible through it), "Bambu Lab" in white low on the front, camera lens above it, silver cutter levers / wings at both sides, two black hotends below it, each with a "0.4" label, an orange "caution hot" icon, heatsink fins on top; X rail = silver rail with screws, black belt bays above and below, behind the head | photo |
+| Toolhead size | cover ~ 80 wide x 88 tall (hotend pair ~ 52 wide, nozzle spacing 25 from the left-only / right-only reach), hotends hang ~ 48 under the cover; depth 70 | estimate from photo proportions |
+| Fan placement in the model | aux fan: left wall inside, y 330, z -40; PTC plate + circulation fan ("ventilation"): right wall, y 410 / 300, z 30; exhaust: right wall rear, z -165; part fan: front of the cover (upper), hotend fan: right side of the head | research (wiki lining guides) + estimate |
+| TIP / heights | TIP 430 (lowered from the 480 guess: the head, cover 88 + hotend 48, must clear the top frame underside at 592), chamber floor 50 | estimate, +/- 30 |
+| Buffer | modelled as a box at the rear top right (x 150, 120 tall, 34 deep, its top 14 above the frame) with the two lanes' sliders in windows on its back; the wiki rear photo only gives the inlet slots near x +50 / y 580 | estimate (low) |
+| USB-A | on the front header right of the screen (x -50); not verified | guess |
+| Start / pause button | right end of the header (h2d-faq: top right of the front cover) | official side, position estimate |
+| H2S | the model draws one hotend in the middle, one holder mount, no side windows, bed from `build_volume` (340 x 320) | from this doc, section 12 |

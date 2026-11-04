@@ -7,7 +7,7 @@
     "P2S",
     "N7"
   ],
-  "mesh": "generic",
+  "mesh": "bambu.p2s",
   "build_volume": [
     256,
     256,

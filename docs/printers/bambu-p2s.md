@@ -123,3 +123,22 @@ Bigger (392 x 406 x 478 vs 389 x 389 x 457) and heavier (14.9 vs 12.95 kg), side
 3. Grey shell: left-hinged dark film-glass door (handle right), glass lid, windowless PC+ABS sides, front cover band with 5 in touchscreen left of centre and the P2S logo right; rear panel with the purge chute at x -69, a mesh grille at x -126, power at x +122, buffer recess at x +28.
 4. Fans: 5815 radial part fan, hotend fan, adaptive airflow (aux) unit with carbon filter at the rear right, optional left aux fan; no exhaust fan; two LED strips (left + front) behind one HA light; one 1080p camera.
 5. Filament: optional rear buffer with Y channel (AMS 600 mm tube, external spools at the rear upper / lower left and one right); heights (TIP ~ 320, floor ~ 30), toolhead size, camera / USB position are estimates.
+
+## 13. Findings while building the model (card/models/bambu.p2s)
+
+Source: wiki.bambulab.com/en/p2s landing page, product photo with part labels (3/4 view from the right front). Own tab, read only.
+
+| Finding | Value used in the model | Confidence |
+|---|---|---|
+| Screen: 5" touchscreen stands on the top front at the LEFT, tilted back, clearly rising above the lid | centre x -128, bezel 120 x 74, tilt 0.3 rad | photo, medium |
+| "P2S" lettering on the slim front band at the RIGHT (dark print on grey, small) | x +122, y 455 | photo, medium |
+| Slim front band (~ 46 mm), the dark glass door runs from the sill to it, left edge nearly flush, ~ 34 mm grey pillar on the right | door x -184 .. +162 | photo, medium |
+| Right side panel: windowless, large black Bambu mark with "Bambu Lab" under it, centred front to back | mark y 255, text y 205 | photo, high |
+| Shell mid-grey (not dark), toolhead dark graphite with a round fan opening | 0x5e6166 shell | photo, high |
+| "Live view camera": inside, upper left | estimate: top beam behind the front band at x -150 | low |
+| Purge wiper: right of the head's rest position, a white "Bambu Lab" pill on its front | chute x -69, pill y 225 | photo, medium |
+| Small round knob on the top near the middle, right of the screen | modelled as the USB-A port (x -40), probably wrong | low |
+| Handle: none visible in the photo | slim vertical pill at the glass's right edge (research says handle right) | low |
+| Rear panel features, Z layout, tube lengths | section 9 / 8 | as above |
+
+Model choices (estimates): TIP 330, floor 30, head 60 x 50 x 90 (nozzle to top), X rods y 366 / 396, Y rods y 381, aux fan on the right wall (x +181, y 250, z -110), carbon filter module x 140 .. 186 in the rear right corner with the ventilation fan on its front, optional aux_l on the left wall, exhaust kit over the mesh grille. Buffer drawn at the recess (x +28, y 286), AMS and external spool tubes enter its two top ports, one tube leaves towards -x and climbs to the slot (-142, 458). Tube bend radii: AMS / spool tubes >= 96; the tube into the slot ~ 70 (slot is 12 mm under the lid), the slot -> head tube < 100 when the head is near the rear panel.

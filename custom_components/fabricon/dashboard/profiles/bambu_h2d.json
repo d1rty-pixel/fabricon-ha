@@ -12,7 +12,7 @@
     "O2D",
     "O1C"
   ],
-  "mesh": "generic",
+  "mesh": "bambu.h2d",
   "build_volume": [
     325,
     320,

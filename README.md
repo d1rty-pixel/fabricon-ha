@@ -33,10 +33,11 @@ filament units) comes from a model profile, so the panels show only what that pr
 | X1 Carbon, X1E | yes | X1 family |
 | P1S, P1P | yes | X1 family (P1S variant) |
 | A1, A1 mini | yes | A1 family, with the AMS Lite |
-| H2D, H2D Pro, H2C, P2S | yes | generic |
+| H2D, H2D Pro, H2C, H2S | yes | H2 family (one nozzle for the H2S) |
+| P2S | yes | P2S (exhaust kit and second aux fan as options) |
 | any other | detected from its entities | generic |
 
-The X1 and A1 models are built from published dimensions and photos. Some details are estimated, and corrections
+The X1, A1, H2 and P2S models are built from published dimensions and wiki photos. Some details are estimated, and corrections
 are welcome.
 
 ## Contents
