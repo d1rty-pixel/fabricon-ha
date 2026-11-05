@@ -25,5 +25,5 @@ jobs:
           from dashboard.build import build
           c = build([{'P': 'x2d_test', 'DEV': 'dev1', 'serial': 'TEST', 'slug': 'test', 'model': 'X2D', 'name': 'Test'}],
                     {'ams': True, 'exhaust_box': True, 'demo': True, 'bambuddy_url': 'http://bambuddy:8000'})
-          assert len(c['views']) == 7, len(c['views'])
+          assert len(c['views']) == 13, len(c['views'])   # 1 + 6 state demos + 6 model demos
           print('ok', len(c['views']), 'views')"

@@ -33,7 +33,7 @@ STATIC = "/fabricon_static"
 CARD = HERE / "frontend" / "fabricon-card.js"
 # the generator's modules in dependency order (each imports only ones before it); reloaded by fabricon.rebuild
 MODULES = ["settings", "lib", "spec", "providers.bambuddy", "providers", "templates", "controls", "panels", "view", "demo", "build"]
-DEMO_TAG = ".x2d_demo_"
+DEMO_TAGS = (".x2d_demo_", ".fab_demo_")   # entity prefixes of the demo printers (dashboard/demo.py)
 
 
 def _generator(reload=False):
@@ -176,7 +176,7 @@ async def async_build(hass, entry, reload=False):
 
 async def _async_demo(hass, demo, source):
     """Demo printer states: a snapshot of the source printer's states (taken while it is online, kept in .storage)
-    with each demo's profile on top. source None: remove them."""
+    with each demo's profile on top, and the model demos' made-up states. source None: remove them."""
     store = Store(hass, 1, f"{DOMAIN}.demo")
     states = {}
     if source:
@@ -188,8 +188,10 @@ async def _async_demo(hass, demo, source):
             await store.async_save(states)
         else:
             states = await store.async_load() or {}
+    if source:   # the model demos are made up from their profiles, no snapshot needed
+        states = {**states, **await hass.async_add_executor_job(demo.model_states)}
     for eid, st in states.items():
         hass.states.async_set(eid, st["state"], st["attributes"])
     for s in hass.states.async_all():
-        if DEMO_TAG in s.entity_id and s.entity_id not in states:
+        if any(t in s.entity_id for t in DEMO_TAGS) and s.entity_id not in states:
             hass.states.async_remove(s.entity_id)

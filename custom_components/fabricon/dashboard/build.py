@@ -6,7 +6,7 @@ deploy.py --dump with the same lists from the websocket API."""
 import json
 import re
 
-from .demo import demo_printers
+from .demo import demo_printers, model_printers
 from . import spec
 from .providers import PROVIDERS
 from . import settings
@@ -121,7 +121,7 @@ def build(ps, options, stl_version=""):
     settings.OPTIONS.update(options)
     ps = [_spec(p) for p in ps] or [_spec({"P": P, "DEV": DEV, "serial": "", "slug": "printer", "model": "X2D", "name": ""})]
     if settings.OPTIONS["demo"]:   # demo.py: test printers in fixed states
-        ps += _demos(ps[0])
+        ps += _demos(ps[0]) + model_printers()
     listing = json.dumps(json.dumps([{"slug": p["slug"], "model": p["model"], "dev": p["DEV"], "name": p["name"]} for p in ps]))[1:-1]   # as JSON string content
     base_t = json.dumps(missing_safe(add_triggers(no_parent_eval(T))))
     views, templates, rendered = [], {}, {}
