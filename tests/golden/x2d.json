@@ -3552,6 +3552,9 @@
            "AMS"
           ]
          },
+         "fitted": [
+          "exhaust_box"
+         ],
          "heaters": [
           {
            "anchor": "nozzle.left",

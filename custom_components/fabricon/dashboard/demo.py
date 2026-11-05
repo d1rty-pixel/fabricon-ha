@@ -72,7 +72,8 @@ def demo_states(states, P):
 # printer): a printer HA doesn't have, its states made up from the profile's components, printing. No AMS (units are
 # found through the device registry, which a demo isn't in).
 MODEL_DEMOS = [("x1c", "X1C", "Demo · X1 Carbon"), ("p1s", "P1S", "Demo · P1S"), ("p2s", "P2S", "Demo · P2S"),
-               ("h2d", "H2D", "Demo · H2D"), ("a1", "A1", "Demo · A1"), ("a1mini", "A1 MINI", "Demo · A1 mini")]
+               ("h2d", "H2D", "Demo · H2D"), ("h2c", "H2C", "Demo · H2C"), ("h2s", "H2S", "Demo · H2S"),
+               ("a1", "A1", "Demo · A1"), ("a1mini", "A1 MINI", "Demo · A1 mini"), ("a2l", "A2L", "Demo · A2L")]
 MODEL_TAG = "fab_demo_"                         # entity prefix of the model demos
 
 

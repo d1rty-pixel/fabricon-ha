@@ -3039,6 +3039,7 @@
            "AMS Lite"
           ]
          },
+         "fitted": [],
          "heaters": [
           {
            "anchor": "nozzle.main",

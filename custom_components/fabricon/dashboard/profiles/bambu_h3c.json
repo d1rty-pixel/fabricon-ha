@@ -1,0 +1,175 @@
+{
+  "key": "bambu.h3c",
+  "vendor": "Bambu Lab",
+  "name": "H3C",
+  "provider": "bambuddy",
+  "match": [
+    "H3C"
+  ],
+  "detect": true,
+  "mesh": "bambu.h3c",
+  "build_volume": [
+    330,
+    320,
+    325
+  ],
+  "kinematics": "corexy_bed_z",
+  "extruders": [
+    {
+      "id": "left",
+      "label": "Left",
+      "heater": "nozzle_l",
+      "short": "L"
+    },
+    {
+      "id": "right",
+      "label": "Right",
+      "heater": "nozzle_r",
+      "short": "R"
+    },
+    {
+      "id": "main",
+      "label": "Nozzle",
+      "heater": "nozzle",
+      "short": ""
+    }
+  ],
+  "heaters": [
+    {
+      "id": "nozzle_l",
+      "kind": "nozzle",
+      "label": "Nozzle L",
+      "anchor": "nozzle.left"
+    },
+    {
+      "id": "nozzle_r",
+      "kind": "nozzle",
+      "label": "Nozzle R",
+      "anchor": "nozzle.right"
+    },
+    {
+      "id": "nozzle",
+      "kind": "nozzle",
+      "label": "Nozzle",
+      "anchor": "nozzle.main"
+    },
+    {
+      "id": "bed",
+      "kind": "bed",
+      "label": "Bed",
+      "anchor": "bed"
+    },
+    {
+      "id": "chamber",
+      "kind": "chamber",
+      "label": "Chamber",
+      "anchor": "chamber.heater"
+    }
+  ],
+  "fans": [
+    {
+      "id": "part",
+      "label": "Part",
+      "anchor": "fan.part"
+    },
+    {
+      "id": "exhaust",
+      "label": "Exhaust",
+      "anchor": "fan.exhaust"
+    },
+    {
+      "id": "chamber",
+      "label": "Chamber",
+      "anchor": "fan.chamber"
+    },
+    {
+      "id": "aux_l",
+      "label": "Aux L",
+      "anchor": "fan.aux_l"
+    },
+    {
+      "id": "aux_r",
+      "label": "Aux R",
+      "anchor": "fan.aux_r"
+    },
+    {
+      "id": "aux",
+      "label": "Aux",
+      "anchor": "fan.aux"
+    },
+    {
+      "id": "ventilation",
+      "label": "Ventilation",
+      "icon": "mdi:air-filter",
+      "anchor": "fan.filter"
+    },
+    {
+      "id": "hotend",
+      "label": "Hotend",
+      "auto": true,
+      "icon": "mdi:fan-auto",
+      "anchor": "fan.hotend"
+    }
+  ],
+  "airduct": true,
+  "lights": [
+    {
+      "id": "chamber",
+      "label": "Chamber",
+      "anchor": "light.chamber"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "chamber",
+      "label": "Chamber"
+    }
+  ],
+  "doors": [
+    {
+      "id": "front",
+      "label": "Door",
+      "anchor": "door.front"
+    }
+  ],
+  "filament": {
+    "units": [
+      "AMS 3H",
+      "AMS 2 Pro",
+      "AMS HT",
+      "AMS"
+    ],
+    "max_units": 4,
+    "external": [
+      {
+        "id": "left",
+        "tag": "EXT L"
+      },
+      {
+        "id": "right",
+        "tag": "EXT R"
+      },
+      {
+        "id": "main",
+        "tag": "EXT"
+      }
+    ]
+  },
+  "ai": [
+    "spaghetti",
+    "build_plate",
+    "clumping",
+    "pileup",
+    "filament_backup"
+  ],
+  "accessories": [
+    {
+      "key": "cut_tool",
+      "label": "CutTool on the rack"
+    },
+    {
+      "key": "draw_tool",
+      "label": "DrawTool on the rack"
+    }
+  ]
+}

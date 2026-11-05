@@ -1,0 +1,127 @@
+{
+  "key": "bambu.h2s",
+  "vendor": "Bambu Lab",
+  "name": "H2S",
+  "provider": "bambuddy",
+  "match": [
+    "H2S",
+    "O1S"
+  ],
+  "mesh": "bambu.h2d",
+  "build_volume": [
+    340,
+    320,
+    340
+  ],
+  "kinematics": "corexy_bed_z",
+  "extruders": [
+    {
+      "id": "main",
+      "label": "Nozzle",
+      "short": "",
+      "heater": "nozzle"
+    }
+  ],
+  "heaters": [
+    {
+      "id": "nozzle",
+      "kind": "nozzle",
+      "label": "Nozzle",
+      "anchor": "nozzle.main"
+    },
+    {
+      "id": "bed",
+      "kind": "bed",
+      "label": "Bed",
+      "anchor": "bed"
+    },
+    {
+      "id": "chamber",
+      "kind": "chamber",
+      "label": "Chamber",
+      "anchor": "chamber.heater"
+    }
+  ],
+  "fans": [
+    {
+      "id": "part",
+      "label": "Part",
+      "anchor": "fan.part"
+    },
+    {
+      "id": "exhaust",
+      "label": "Exhaust",
+      "anchor": "fan.exhaust"
+    },
+    {
+      "id": "aux",
+      "label": "Aux",
+      "anchor": "fan.aux"
+    },
+    {
+      "id": "ventilation",
+      "label": "Ventilation",
+      "anchor": "fan.filter",
+      "icon": "mdi:air-filter"
+    },
+    {
+      "id": "hotend",
+      "label": "Hotend",
+      "anchor": "fan.hotend",
+      "auto": true,
+      "icon": "mdi:fan-auto"
+    }
+  ],
+  "airduct": true,
+  "lights": [
+    {
+      "id": "chamber",
+      "label": "Chamber",
+      "anchor": "light.chamber"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "chamber",
+      "label": "Chamber"
+    }
+  ],
+  "doors": [
+    {
+      "id": "front",
+      "label": "Door",
+      "anchor": "door.front"
+    }
+  ],
+  "filament": {
+    "units": [
+      "AMS 2 Pro",
+      "AMS HT",
+      "AMS"
+    ],
+    "max_units": 4,
+    "external": [
+      {
+        "id": "main",
+        "tag": "EXT"
+      }
+    ]
+  },
+  "ai": [
+    "spaghetti",
+    "build_plate",
+    "clumping",
+    "pileup",
+    "filament_backup"
+  ],
+  "accessories": [
+    {
+      "key": "laser",
+      "label": "Laser module (10 W) fitted"
+    },
+    {
+      "key": "laser_edition",
+      "label": "Laser Edition (green safety windows, black top plate, emergency stop)"
+    }
+  ]
+}

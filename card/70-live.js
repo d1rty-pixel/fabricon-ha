@@ -111,6 +111,10 @@ Object.assign(FabriconCard.prototype, {
         na || empty ? NA : `${at.type || NA} ${at.remaining != null ? at.remaining + " %" : ""}`.trim(), at.active ? "#FFB400" : na || empty ? DIM : (at.color || "#FFB400"));
     }
 
+    // laser / cutting job: the printer switches its air duct to "laser" (BamBuddy has no module entities)
+    const laser = this._st(core.airduct)?.state === "laser";
+    if (laser !== this._laserOn) { this._laserOn = laser; this._laser(laser); }
+
     // job: printed model colour, progress, HUD, screen
     const fil = this._st(core.active_filament);
     this._feedColour = fil?.attributes?.color || activeColor;
@@ -120,7 +124,7 @@ Object.assign(FabriconCard.prototype, {
       layer: this._num(core.layer) || 0, layers: this._num(core.layers) || 0 };
     const name = this._st(core.job)?.state;
     this._hud.innerHTML = `STATUS <span>${s.replace(/_/g, " ")}</span> · PROGRESS <span>${known(core.progress) ? Math.round(prog * 100) + " %" : NA}</span>`
-      + (active ? ` · LAYER <span>${this._job.layer}/${this._job.layers}</span>` : "")
+      + (laser ? ` · MODE <span>LASER</span>` : active ? ` · LAYER <span>${this._job.layer}/${this._job.layers}</span>` : "")
       + (name && !["unknown", "unavailable"].includes(name) ? `<br>JOB <span>${name}</span>` : "")
       + (this._gc ? `<br>MOTION <span>G-CODE REPLAY</span>${active && this._job.layers && this._gc.layerCount !== this._job.layers
           ? ` · <span class="warn">FILE HAS ${this._gc.layerCount} LAYERS, JOB ${this._job.layers}</span>` : ""}`

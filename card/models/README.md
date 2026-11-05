@@ -51,5 +51,8 @@ Everything is optional except head and bed. The core resets these before `_build
 - `_xray(on)`: hide doors, glass and covers.
 - `_amsChanged(units)`: the connected AMS units changed (e.g. a spool holder only without AMS).
 - `_tubesUpdate()`: called every frame; PTFE tubes (`this._tubePath(nodes)` + `TubeGeometry`).
+- `_laser(on)`: a laser / cutting job started or ended (the printer's air duct reads `laser`).
+
+Accessories the profile lists and the user switched on for this printer (options flow): `this._fitted("laser")`.
 
 Look at `bambu.x2d` (detailed) and `generic` (parametric, every part by rule).

@@ -142,3 +142,5 @@ Source: wiki.bambulab.com/en/p2s landing page, product photo with part labels (3
 | Rear panel features, Z layout, tube lengths | section 9 / 8 | as above |
 
 Model choices (estimates): TIP 330, floor 30, head 60 x 50 x 90 (nozzle to top), X rods y 366 / 396, Y rods y 381, aux fan on the right wall (x +181, y 250, z -110), carbon filter module x 140 .. 186 in the rear right corner with the ventilation fan on its front, optional aux_l on the left wall, exhaust kit over the mesh grille. Buffer drawn at the recess (x +28, y 286), AMS and external spool tubes enter its two top ports, one tube leaves towards -x and climbs to the slot (-142, 458). Tube bend radii: AMS / spool tubes >= 96; the tube into the slot ~ 70 (slot is 12 mm under the lid), the slot -> head tube < 100 when the head is near the rear panel.
+
+See also: bambu-models.md (inventory of all Bambu Lab printers), bambu-x2d.md (X2D facts).

@@ -29,8 +29,9 @@ Object.assign(MODEL, {
     const cover = this._headCover = new T3.MeshPhysicalMaterial({ color: 0x2b2d31, metalness: 0.1, roughness: 0.18, transparent: true, opacity: 0.9 });
     const base = new T3.MeshStandardMaterial({ color: 0x17181a, metalness: 0.15, roughness: 0.7 });
     this._shell.push(base);
-    const cg = this._slabXY(HEAD_W - 2, BODY, 10, HEAD_D - 6);
-    this._m(cg, cover, 0, hb + BODY / 2, -3, this._head, ent("fan:part"));
+    const lz = this._v.laser;                                                                 // laser module: it replaces the front cover
+    const cg = this._slabXY(HEAD_W - 2, BODY, 10, lz ? 38 : HEAD_D - 6);
+    this._m(cg, cover, 0, hb + BODY / 2, lz ? -19 : -3, this._head, ent("fan:part"));
     this._box(50, 56, 34, M.bodyDark, 0, hb + 52, -8, this._head);                            // extruder inside the cover
     this._box(HEAD_W - 12, 8, HEAD_D - 14, base, 0, hb + 4, -3, this._head);                  // black base
     this._box(70, 4, 6, base, 0, hb + 2, FZ + 4, this._head);
@@ -38,9 +39,11 @@ Object.assign(MODEL, {
     tl.position.set(0, hb + 20, FZ + 0.4);
     this._head.add(tl);
     this._fans.part = this._fan(14, "z+", 0, hb + 66, FZ + 0.4, ent("fan:part"), this._head, "blower");
-    this._cyl(3.4, 2, "z", new T3.MeshPhysicalMaterial({ color: 0x0a1018, metalness: 0.4, roughness: 0.05 }), 0, hb + 40, FZ + 1, this._head, null, 20);   // toolhead camera
-    for (const s of [-1, 1]) this._box(5, 54, 40, M.handle, s * (HEAD_W / 2 + 2), hb + 50, 6, this._head).rotation.z = s * 0.08;   // cutter levers
-    this._fans.hotend = this._fan(11, "x+", HEAD_W / 2 + 5, hb + 30, -24, ent("fan:hotend"), this._head);
+    const cam = this._cyl(3.4, 2, "z", new T3.MeshPhysicalMaterial({ color: 0x0a1018, metalness: 0.4, roughness: 0.05 }), 0, hb + 40, FZ + 1, this._head, null, 20);   // toolhead camera
+    // cutter levers on the outer sides (H2S: one, on the right); the hotend fan on the right, H2S: left (h2d-intro, section 5 of the doc)
+    for (const s of dual ? [-1, 1] : [1]) this._box(5, 54, 40, M.handle, s * (HEAD_W / 2 + 2), hb + 50, 6, this._head).rotation.z = s * 0.08;
+    this._fans.hotend = this._fan(11, dual ? "x+" : "x-", (dual ? 1 : -1) * (HEAD_W / 2 + 5), hb + 30, -24, ent("fan:hotend"), this._head);
+    if (lz) for (const o of [tl, this._fans.part.grp || this._fans.part.g, cam]) if (o) o.visible = false;   // the cover's front is gone
     for (const [dx, dz] of [[-10, -8], [14, -14]]) {                                          // PTFE couplings
       this._cyl(6, 8, "y", M.black, dx, HEAD_TOP + 4, dz, this._head);
       this._cyl(4.5, 3, "y", M.steel, dx, HEAD_TOP + 9, dz, this._head);
@@ -60,11 +63,21 @@ Object.assign(MODEL, {
       this._box(24, 22, 24, M.black, 0, TIP + 25, 0, g, hent);                                // hotend body
       this._box(10, 7, 0.6, M.orange, 0, TIP + 22, 12.2, g, hent);                            // "caution hot" icon
       this._box(10, 4, 0.6, label, 0, TIP + 31, 12.2, g, hent);                               // 0.4 label
-      for (let f = 0; f < 5; f++) this._box(22, 1.6, 22, M.alu, 0, TIP + 38.5 + f * 2.4, 0, g, hent);   // heatsink
+      if (this._v.h2c && x.id === "right") {                                                 // Vortek: induction hotend, copper coil round the body
+        const cu = this._copper ||= new T3.MeshStandardMaterial({ color: 0xb8662e, metalness: 0.85, roughness: 0.35 });
+        for (let f = 0; f < 4; f++) this._cyl(13.5, 2.6, "y", cu, 0, TIP + 14 + f * 4.4, 0, g, hent, 24);
+        this._box(8, 16, 4, M.steel, 0, TIP + 52, 13, g, hent);                               // latch the rack's actuator locks (h2c-intro)
+        for (let f = 0; f < 3; f++) this._box(22, 1.6, 22, M.alu, 0, TIP + 38.5 + f * 2.4, 0, g, hent);
+      } else for (let f = 0; f < 5; f++) this._box(22, 1.6, 22, M.alu, 0, TIP + 38.5 + f * 2.4, 0, g, hent);   // heatsink
+      if (this._v.laser) g.visible = false;                                                   // hidden behind / under the laser module
       const tip = this._cyl(1.1, 5, "y", gold, 0, TIP + 2.5, 0, g, hent, 16, 4.5);
       this._nozzles[x.id] = { g, tip };
       this._heat[x.heater] = { mat: tip.material, lo: 60, hi: 300 };
     });
+    if (this._v.h2c) {                                                                        // enhanced toolhead fan with an LED row (h2c-faq)
+      this._box(44, 2.4, 1, new T3.MeshBasicMaterial({ color: 0xdfe8ff }), 0, hb + BODY - 6, lz ? -2 : FZ + 0.4, this._head);
+    }
+    if (lz) this._h2dLaserModule();
   },
 
   // heatbed: textured plate on the heater, carrier arms to the three Z sliders (screws front left / right and rear

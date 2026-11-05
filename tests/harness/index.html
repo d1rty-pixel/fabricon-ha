@@ -13,7 +13,7 @@
 // states made up from the printer's spec for the chosen state. Services are logged, the print proxy answers 404.
 const q = new URLSearchParams(location.search), fixture = q.get("fixture") || "x2d", state = q.get("state") || "printing";
 const bar = document.getElementById("bar");
-bar.innerHTML = ["x2d", "x1c", "p1s", "p2s", "a1", "h2d"].map((f) => `<a href="?fixture=${f}&state=${state}">${f}</a>`).join(" ")
+bar.innerHTML = ["x2d", "x1c", "p1s", "p2s", "a1", "a2l", "h2d", "h2c", "h2s", "h3c"].map((f) => `<a href="?fixture=${f}&state=${state}">${f}</a>`).join(" ")
   + " · " + ["printing", "idle", "paused", "finished", "offline"].map((s) => `<a href="?fixture=${fixture}&state=${s}">${s}</a>`).join(" ")
   + ` · mesh <input id="mesh" size="12" placeholder="(spec)" value="${q.get("mesh") || ""}">`;
 document.getElementById("mesh").addEventListener("change", (e) => { q.set("mesh", e.target.value); location.search = q; });
@@ -30,6 +30,8 @@ if (q.get("mesh")) cfg.printer_spec.mesh = q.get("mesh");
 // variants of a fixture: &profile=bambu.a1mini&volume=180,180,180
 if (q.get("profile")) cfg.printer_spec.profile = q.get("profile");
 if (q.get("volume")) cfg.printer_spec.build_volume = q.get("volume").split(",").map(Number);
+// accessories switched on (&fitted=laser,laser_edition) and a laser job (&laser=1: the air duct reads "laser")
+if (q.get("fitted") != null) cfg.printer_spec.fitted = q.get("fitted").split(",").filter(Boolean);
 const sp = cfg.printer_spec, c = sp.core;
 
 // states: every registry entity "unknown", then the spec's components by state
@@ -45,6 +47,7 @@ if (on) {
   for (const l of sp.lights) set(l.entity, "on");
   for (const d of sp.doors) set(d.entity, "off");
   set(c.usb, "on"); set(c.nozzle_select, "left");
+  set(c.airduct, q.get("laser") ? "laser" : "cooling");
   sp.filament.external.forEach((x, i) => set(x.entity, "loaded", { type: "PETG", color: ["#2b6cff", "#e03a3a"][i % 2], remaining: 60, active: false, empty: false }));
   reg.ents.filter((e) => /_slot_\d$/.test(e.entity_id)).forEach((e, i) => set(e.entity_id, "loaded", { type: "PLA", color: ["#ffb400", "#ffffff", "#111111", "#2e9e4f"][i % 4], remaining: 80 - i * 15, active: run && i === 0, empty: false }));
   reg.ents.filter((e) => /_humidity$/.test(e.entity_id)).forEach((e) => set(e.entity_id, 18));

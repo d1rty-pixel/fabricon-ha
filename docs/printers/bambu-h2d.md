@@ -188,3 +188,20 @@ Read in Chrome on wiki.bambulab.com (`/en/h2d` overview photo with labels, `/en/
 | USB-A | on the front header right of the screen (x -50); not verified | guess |
 | Start / pause button | right end of the header (h2d-faq: top right of the front cover) | official side, position estimate |
 | H2S | the model draws one hotend in the middle, one holder mount, no side windows, bed from `build_volume` (340 x 320) | from this doc, section 12 |
+
+See also: bambu-laser.md (all laser / cutting modules), bambu-h3c.md (new tool changer), bambu-models.md (inventory of all Bambu Lab printers).
+
+## 16. Model implementation notes (variants, laser; card/models/bambu.h2d)
+
+No new photos were read for this step (research from sections 10 / 12 and bambu-laser.md); every number below is an estimate.
+
+| Item | Model | Confidence |
+|---|---|---|
+| H2C rack | black frame x 196..234, z 0..120, y 290..470 (top under the Y rod at 500), 2 columns x 3 docks, 5 spare hotends, LED per dock, motor + chain box at the bottom; heater plate / fans moved to the rear half of the right wall | side official (h2c-intro), coordinates low |
+| H2C Vortek hotend | copper coil rings instead of heatsink fins on the right hotend, latch block, LED row on the cover | form low |
+| H2C panels | dark grey (0x45484d) WITH the window (h2c-faq table says "dark grey panel", glass window) - not "instead of the glass" | official |
+| H2C bed | 330 x 320 from the profile | official |
+| H2S | one hotend in the middle, ONE cutter lever on the right, hotend fan duct on the left, no windows, bed 340 x 320 | official (section 12) |
+| Laser module | 50 x 82 x 50 box replacing the cover's front half: heat sink + fan on top, LED, flame sensor, hex air nozzle + probe, quick-release lever right; hotends hidden; black 4 mm air tube from the module's top coupler to a coupler at the middle of the buffer (x 150, y 560) | wiki text, outline estimate (no photo) |
+| Laser job | 455 nm beam (thin blue cone) from the nozzle to the bed + glow spot, platform with slats shown only during the job | looks: estimate |
+| Laser Edition | green PC door + windows, black top plate, E-stop (red mushroom on yellow plate, right side below the window, z +140), safety key + 100 mm smoke adapter with a stub at the rear (x -25, y 470, unverified), BirdsEye cover in the right top crossbeam | positions low |

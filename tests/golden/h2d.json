@@ -3531,6 +3531,7 @@
            "AMS"
           ]
          },
+         "fitted": [],
          "heaters": [
           {
            "anchor": "nozzle.left",

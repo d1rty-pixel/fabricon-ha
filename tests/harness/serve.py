@@ -1,6 +1,6 @@
 """Local test page for the 3D card without Home Assistant: python3 tests/harness/serve.py [port], then open
 http://localhost:8765/?fixture=x2d&state=printing (fixture = tests/golden/<name>.json; state = printing | idle |
-offline | paused | finished; optional mesh=<key>, profile=<key>, volume=x,y,z to try a variant). Bundle first (python3 deploy.py --bundle). Serves this folder, the bundled card under
+offline | paused | finished; optional mesh=<key>, profile=<key>, volume=x,y,z to try a variant, fitted=laser,... for accessories, laser=1 for a laser job). Bundle first (python3 deploy.py --bundle). Serves this folder, the bundled card under
 /fabricon_static/ and the golden files / registry fixtures under /golden/ and /fixtures/."""
 import functools
 import http.server

@@ -281,3 +281,82 @@ Per-model capability data in the API: `nozzle_count` (`/printers/`), `supports_n
   unique id `<entry>_<serial>_<key>`), not by the id prefix, when possible. Unique id keys (`left_aux_fan`, `aux_fan`, `chamber_fan`, `nozzle_target`, `nozzle_2_target`, `external_spool_2`, `sdcard`...) differ from the suffixes above.
 - AMS Lite (A1, A1 mini, A2L) has no humidity / temperature / drying, and possibly no serial (entity id built from printer serial and place letter).
 - Not verified on live hardware: P2S accessory behaviour, H2D `left_aux_fan_speed`, `left_`/`right_` mapping of `nozzles[]` on the X2D versus H2D.
+
+## 9. Newer models and modules
+
+Research of 2026-11-05. Sources, read as source code (not observed on hardware):
+
+- Integration [Spegeli/hacs_bambuddy `v2.1.0-beta.2`](https://github.com/Spegeli/hacs_bambuddy/tree/v2.1.0-beta.2) (pre-release of 2026-11-02; releases: 2.0.0_redesign 2026-10-29, 2.1.0-beta.1 2026-11-01). Links `H2:file`.
+- BamBuddy [maziggy/bambuddy `v1.3.1b1-daily.20261105`](https://github.com/maziggy/bambuddy/tree/v1.3.1b1-daily.20261105) (daily of 2026-11-05; latest stable is still v1.2.5.7, 2026-10-02; the `main` branch is stale, 2026-10-22). Links `B2:file`.
+- Bambu Lab H3C coverage: [Tom's Hardware](https://www.tomshardware.com/3d-printing/bambu-lab-teases-its-mysterious-h3c-tool-changer-3d-printer-features-nine-tools-and-a-drop-down-rack-slated-for-november-3-launch) (tool changer, nine tools, announced for 2026-11-03).
+
+### 9.1 Model codes (complete, both projects agree)
+
+BamBuddy's tables: [`utils/printer_models.py`](https://github.com/maziggy/bambuddy/blob/v1.3.1b1-daily.20261105/backend/app/utils/printer_models.py) (`PRINTER_MODEL_ID_MAP`, 3MF names in `PRINTER_MODEL_MAP`),
+[`virtual_printer/manager.py`](https://github.com/maziggy/bambuddy/blob/v1.3.1b1-daily.20261105/backend/app/services/virtual_printer/manager.py) (SSDP codes),
+[`frontend/src/utils/printerModel.ts`](https://github.com/maziggy/bambuddy/blob/v1.3.1b1-daily.20261105/frontend/src/utils/printerModel.ts). Integration:
+[H2:models.py `_MODEL_NAMES`](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/models.py#L134-L138) (identical to 2.0.0 apart from `BL-P003` -> X1E, which only the integration and the frontend know).
+
+| Code | Model | | Code | Model |
+|---|---|---|---|---|
+| `BL-P001` | X1C | | `N7` | P2S |
+| `BL-P002` | X1 | | `N6` | X2D |
+| `BL-P003` (integration/frontend only) / `C13` | X1E | | `N9` | A2L |
+| `C11` / `C12` | P1P / P1S | | `A11`, `N2S` | A1 |
+| `O1D` | H2D | | `A12`, `N1`, `A04` | A1 Mini |
+| `O1E`, `O2D` | H2D Pro | | `O1C`, `O1C2` | H2C |
+| `O1S` | H2S | | | |
+
+Also accepted by BamBuddy as plain names: `P1P`, `P1S`, `P2S` (3MF/IDs), `Bambu Lab A1M` (terse cloud rename, = A1 Mini).
+- **H3C: unknown to both projects.** No code, no name, no entry anywhere in either repository (grep of the whole BamBuddy tree and the integration). An H3C would arrive as an unmapped model string: the integration's `display_model()` returns the stored text as is, so the device `model` and the entity-id prefix are whatever BamBuddy stored (free text or the SSDP code); `model_key()` matches no table, so the printer gets only the "unknown model" feature set from section 2 (no door, no airduct, no USB, no exhaust fan, no AI detectors, camera capped at 5 fps, light = `chamber_light`). Dual-nozzle detection is dynamic (`nozzle_2` in temperatures or `nozzle_count` 2) and BamBuddy's `DUAL_NOZZLE_MODELS` does not contain it, so a nine-tool changer would show at most the two nozzles BamBuddy parses. Expect a BamBuddy/integration update (as happened for X2D #988 and A2L #1684) before it works properly.
+- **No newer model than the above exists in either project** (no "H2D Pro 2", no A2 variant other than A2L, no laser variant code). Note the laser combos (H2D/H2C with laser module) use the H2D/H2C codes; nothing in BamBuddy distinguishes them.
+
+### 9.2 Component -> entity suffix for the models missing from section 5
+
+All derived from the same model sets as sections 4/5 ([H2:models.py#L142-L167](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/models.py#L142-L167), [L257-L260](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/models.py#L257-L260)); prefix = display name slug (`h2c`, `h2s`, `h2d_pro`, `a2l`).
+
+| Component | H2C | H2S | H2D Pro | A2L |
+|---|---|---|---|---|
+| Nozzles | dual: `left_nozzle_temperature` + `right_nozzle_temperature`, `left_/right_nozzle_target_temperature`, `left_/right_nozzle_type`, `*_diameter`, `active_nozzle` (select) | single: `nozzle_temperature`, `nozzle_target_temperature`, `nozzle_type`, `nozzle_diameter` | as H2C (dual) | single (as A1): `nozzle_temperature` etc.; the cutter/plotter head is NOT a nozzle (no entities) |
+| Nozzle rack (6 hotends, "Vortek") | none: BamBuddy parses `nozzle_rack[]` (ids 16-21, [B2:schemas/printer.py#L258-L271](https://github.com/maziggy/bambuddy/blob/v1.3.1b1-daily.20261105/backend/app/schemas/printer.py#L258-L271), `NOZZLE_RACK_MODELS` = H2C only) in `/status`, the integration has no rack entity or attribute | - | - | - |
+| Bed | `bed_temperature`, `bed_target_temperature` (max 120) | same | same | same (max 80, nozzle max 300) |
+| Chamber | `chamber_temperature` + `chamber_target_temperature` (heater) | same | same | - (open frame; BamBuddy filters chamber temps for A2L, not on its sensor allow-list) |
+| Fans | `part_cooling_fan`, `auxiliary_fan`, `exhaust_fan`, `ventilation`, sensor `hotend_fan` | same | same | `part_cooling_fan`, `hotend_fan` only (A1 family: no aux, chamber or exhaust fan) |
+| Airduct select | `airduct_mode` | `airduct_mode` | `airduct_mode` | - |
+| Light | `light.chamber_light` | same | same | `light.light` (open frame) |
+| Door | `door` | `door` | `door` | - |
+| Storage | `usb_drive` | `usb_drive` | `usb_drive` | `sd_card` (not in `_USB_DRIVE`) |
+| Wired network | - | - | `wired_network` | - |
+| External spool | `left_external_spool` + `right_external_spool` | `external_spool` | `left_/right_external_spool` | `external_spool` |
+| AMS | AMS 2 Pro / AMS HT / AMS | same | same | AMS Lite at place 6 (entity id from AMS model + printer serial, no place letter, when BamBuddy has no AMS serial; humidity, temperature and drying absent; the Lite sends a fixed 0) |
+| Camera | `camera` (RTSP, 30 fps) | same | same | `camera` (chamber-image protocol, port 6000, 5 fps) |
+| AI switches | `spaghetti_detection`, `pileup_detection`, `clumping_detection`, `build_plate_detection`, `air_printing_detection` | same without `air_printing_detection` | same as H2C | `build_plate_position_detection` only |
+| Other | `print_speed`, buttons, `cover`, `plate_clear_needed`, `hms_errors`, `maintenance`, `update.firmware` | same | same | same |
+
+Sources: `_DOOR/_AIRDUCT/_USB_DRIVE/_EXHAUST_FAN` L143-L154, `_SINGLE_DETECTORS/_AIR_PRINTING` L259-L260, `_ETHERNET` L147, `_OPEN_FRAME` L164, AMS Lite handling `ams_type_by_place` L620 / `ams_label` L626.
+Nothing about "multiple hotends" beyond left/right exists: the integration has no tool-changer, nozzle-rack or hotend-change entity (stages `testing_hotend_change`, `preparing_hotend`, `homing_blade_holder`, `calibrating_blade_holder` exist as `print_stage` values only).
+
+### 9.3 Laser / cutting module
+
+Plainly: **neither BamBuddy nor the integration models a laser or cutting module.** There are no entities for module type, laser power, laser state, air assist, safety key, enclosure/lid interlock for it, or cutting blade/mat; no MQTT field of that kind is parsed (grep for laser, cutter, cutting, plotter, hw_switch in backend and integration finds only the items below). The Bambu H2D/H2C laser combos and the A2L cutter/plotter are therefore just an H2D/H2C/A2L to them.
+
+What does exist (all read passively):
+
+| Item | Where | Effect |
+|---|---|---|
+| `select.<p>_airduct_mode` state `laser` | BamBuddy keeps `airduct_mode` int from MQTT `device.airduct.modeCur` ([B2:bambu_mqtt.py#L5081-L5089](https://github.com/maziggy/bambuddy/blob/v1.3.1b1-daily.20261105/backend/app/services/bambu_mqtt.py#L5081-L5089), comment only says 0 cooling, 1 heating). The integration maps `{0: cooling, 1: heating, 2: laser}` ([H2:select.py#L23-L24](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/select.py#L23-L24)) | The only laser signal. While the printer is in mode 2 the select's `options` list is `cooling, heating, laser` (the current state is appended, [L110-L115](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/select.py#L110-L115)); selecting `laser` is ignored, only cooling/heating can be set. Any other mode number gives state `unknown`. Exists only on airduct models (P2S, X2D, H2D, H2D Pro, H2C, H2S), never on the A2L. Icon `mdi:laser-pointer`, translation "Laser mode". |
+| `print_stage` `calibrating_laser` (stage 43), `paused_cutter` (33), `calibrating_cutting_module` (56) | [H2:models.py#L87,L97,L110](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/models.py#L87); BamBuddy [bambu_mqtt.py#L1237-L1247](https://github.com/maziggy/bambuddy/blob/v1.3.1b1-daily.20261105/backend/app/services/bambu_mqtt.py#L1237) | Stage names only; they come from the shared stage table. |
+| `ventilation` fan | [H2:fan.py#L224-L229](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/fan.py#L224-L229) | `turn_off` is a no-op outside cooling mode, because "the H2's exhaust fan draws off the laser's fumes". |
+| A2L | BamBuddy treats it as single-FDM plus a cutter/plotter head; the changelog (v0.2.4.7, #1684) says: "The cutter/plotter capability surfaces in MQTT push fields Bambuddy doesn't yet model; ignored for v1" ([CHANGELOG.md](https://github.com/maziggy/bambuddy/blob/v1.3.1b1-daily.20261105/CHANGELOG.md), grep "Bambu Lab A2L support"). | no cutter entities |
+
+How a laser / cutting job looks in HA: not known from source (no capture of such a job exists in either repository, and the 3MF/job would not be a normal gcode print). What the code would do with the standard MQTT: `print_status` follows `gcode_state` (`printing` while `RUNNING`, so a laser job shows as `printing` if the printer reports RUNNING), `print_stage` is the stage number if it is in the table else `unknown` (None), `progress`, `remaining_time`, layer counts as reported, temperatures normal, `airduct_mode` = `laser` when the printer sets modeCur 2. BamBuddy has no notion of a non-3D job type: it would archive/queue it like a print. **Fabricon should treat `airduct_mode == laser` as the only module signal, and the fixed names `calibrating_laser` / `calibrating_cutting_module` / `paused_cutter` as the only stage signals.** Anything else needs a live capture (BamBuddy's debug log or support bundle of a laser-equipped H2D/H2C/A2L).
+
+### 9.4 Changes in the integration since v2.0.0_redesign (to v2.1.0-beta.2)
+
+Diff `v2.0.0_redesign..v2.1.0-beta.2` ([compare](https://github.com/Spegeli/hacs_bambuddy/compare/v2.0.0_redesign...v2.1.0-beta.2)): `models.py`, `fan.py`, `select.py`, `binary_sensor.py`, `light.py`, `switch.py`, `number.py`, `button.py`, `camera.py`, `entity.py` are **unchanged**. The release notes say "no entity ID changes".
+- No renamed or removed entities; no new platform; device structure unchanged (hub -> printer -> AMS units).
+- `sensor.py` only: the slot sensors (`slot_N` of every AMS unit, and `external_spool`, `external_spool_2` / `left_`/`right_external_spool`) gain attributes `inventory_spool` and `inventory_assignable` (BamBuddy's spool inventory, [H2:sensor.py#L528-L587](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/sensor.py#L528-L587)). They are excluded from the recorder and the sensors write state when the inventory changes (inventory polled every 60 s plus on websocket push).
+- New actions `bambuddy.assign_spool`, `bambuddy.unassign_spool`, `bambuddy.get_spools` (services.py). Key permissions: optional `inventory:read`, `inventory:view_assignments`, `filaments:read`, `inventory:update` (**Manage Inventory**, [const.py](https://github.com/Spegeli/hacs_bambuddy/blob/v2.1.0-beta.2/custom_components/bambuddy/const.py)); a key without them still works.
+- Card/frontend: new bambuddy-card spool dialog, label QR scan (option `assign_scanned_spool`); `filament_types.py`, `inventory.py` added. Irrelevant for the binding.
+- BamBuddy side since 1.2.5.7 (the integration's minimum stays 1.2.5.7): daily 1.3.1b1 adds spool-label sheets, OctoEverywhere, Polish, archive redesign; model code tables identical to 1.2.5.7; A2L AMS Lite usage fixes; H2C stage 72/74 names fall back to `preparing`. Nothing changes the status schema that the binding uses, `/status` still carries `nozzle_rack[]` (H2C), `airduct_mode`, `supports_chamber_heater`, `left_aux_fan_speed`, `door_open`.
+- Binding consequences: (1) keep binding by "entity exists" (section 8); (2) add H2C/H2S/H2D Pro/A2L to the model fallback table as in 9.2; (3) show a laser state from `select.*_airduct_mode == laser` and the three stage names; (4) the rack and the H3C cannot be bound to entities today, they would need new BamBuddy `/status` data read by the Fabricon proxy (`nozzle_rack[]` is already in the API for H2C).

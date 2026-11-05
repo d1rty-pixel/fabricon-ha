@@ -1,11 +1,11 @@
 // What the core asks of the A1 / A1 mini model besides _build (see card/models/README.md).
 Object.assign(MODEL, {
-  _cfg1() { return this._a1c ||= CFG[this._spec().profile === "bambu.a1mini" ? "a1mini" : "a1"]; },
+  _cfg1() { return this._a1c ||= CFG[{ "bambu.a1mini": "a1mini", "bambu.a2l": "a2l" }[this._spec().profile] || "a1"]; },
 
   // open frame: the AMS Lite stands beside the printer (amsTop null), its gap leaves room for the spool holder arm
   _geometry() {
     const c = this._cfg1();
-    return { w: c.w, d: c.d, h: c.h, tip: c.tip, idle: c.idle, bed: [c.bed, c.bed], kinematics: "bedslinger", focus: c.h * 0.55,
+    return { w: c.w, d: c.d, h: c.h, tip: c.tip, idle: c.idle, bed: [c.bed, c.bedZ || c.bed], kinematics: "bedslinger", focus: c.h * 0.55,
              amsTop: null, amsGap: c.amsGap };
   },
 

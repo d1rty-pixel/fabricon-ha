@@ -32,12 +32,16 @@ filament units) comes from a model profile, so the panels show only what that pr
 | X2D | yes | detailed (AMS 2 Pro / HT, External Exhaust Fan kit) |
 | X1 Carbon, X1E | yes | X1 family |
 | P1S, P1P | yes | X1 family (P1S variant) |
-| A1, A1 mini | yes | A1 family, with the AMS Lite |
-| H2D, H2D Pro, H2C, H2S | yes | H2 family (one nozzle for the H2S) |
 | P2S | yes | P2S (exhaust kit and second aux fan as options) |
+| H2D, H2D Pro, H2C, H2S | yes | H2 family: H2C with the Vortek hotend rack, H2S with one nozzle; laser module and Laser Edition as options |
+| H3C | yes (binds what HA has: BamBuddy doesn't know the model yet) | H3C with the tool rack and the AMS 3H |
+| A1, A1 mini, A2L | yes | A1 family, with the AMS Lite; A2L cutting module as an option |
 | any other | detected from its entities | generic |
 
-The X1, A1, H2 and P2S models are built from published dimensions and wiki photos. Some details are estimated, and corrections
+BamBuddy reports no laser or cutting module, so they are set per printer in the options. A laser job is recognised
+by the printer's air duct mode `laser`; the model then shows the beam.
+
+The models are built from published dimensions and Bambu wiki photos (sources per value in `docs/printers/`). Some details are estimated, and corrections
 are welcome.
 
 ## Contents

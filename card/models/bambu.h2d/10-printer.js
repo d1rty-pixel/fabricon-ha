@@ -2,6 +2,10 @@
 Object.assign(MODEL, {
   _build() {
     const sp = this._spec(), dual = (sp.extruders || []).length !== 1;       // one extruder = H2S: no side windows, one nozzle
+    // variants: H2C (profile bambu.h2c) = Vortek hotend + hotend rack, dark side panels; accessories: laser module,
+    // Laser Edition look (green glass, black top plate, E-stop, ...). The H2S is the one-extruder path (dual = false).
+    this._v = { h2c: sp.profile === "bambu.h2c", laser: this._fitted("laser"), ed: this._fitted("laser_edition") };
+    this._glassMat = this._v.ed ? this._greenGlass() : this.M.tint;         // door and side windows
     this._h2dShell(dual);
     this._h2dFront(dual);
     this._h2dRear();
@@ -10,6 +14,7 @@ Object.assign(MODEL, {
     this._h2dHead(dual);
     this._h2dBed();
     this._h2dHolders();
+    this._h2dVariant();
     // labels: the toolhead, the chamber (heater, light and the wall fans together), the rest alone
     const door = this._door.children[this._door.children.length - 1], ext = Object.values(this._holders);
     this._labelSpec = [
@@ -27,6 +32,7 @@ Object.assign(MODEL, {
     const T3 = this.T, M = this.M, slabXY = this._slabXY.bind(this);
     const silver = this._silver = new T3.MeshStandardMaterial({ color: 0x7e8186, metalness: 0.5, roughness: 0.42 });
     this._shell.push(silver);
+    const side = this._v.h2c ? this._shell[this._shell.push(new T3.MeshStandardMaterial({ color: 0x45484d, metalness: 0.5, roughness: 0.45 })) - 1] : silver;   // H2C: dark-grey panels (wiki h2c-faq table)
     this._box(W, 32, D, M.black, 0, 24, 0);                                              // base ring, 35 tall (wiki)
     for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this._cyl(12, 8, "y", M.black, x * 217, 4, z * 227);   // feet 435 x 454
     // a flat panel (w along z) with an optional rounded window: hole = {z, y, w, h}
@@ -45,11 +51,11 @@ Object.assign(MODEL, {
     };
     const win = dual ? WINDOW : null;
     for (const s of [-1, 1]) {
-      panel(D, 556, 40, T, silver, s * (HW - T / 2), win);                                // outer side panel
+      panel(D, 556, 40, T, side, s * (HW - T / 2), win);                                // outer side panel
       panel(D - 2 * T, 542, FLOOR, 2, M.inner, s * (HW - T - 1), win);                      // inner lining
       if (win) {
         (this._winRims ||= []).push(this._m(slabXY(win.w + 12, win.h + 12, 16, 1.4, [win.w, win.h, 12]).rotateY(Math.PI / 2), M.black, s * (HW + 0.2), win.y, win.z));
-        this._m(slabXY(win.w, win.h, 12, 1).rotateY(Math.PI / 2), M.tint, s * (HW + 1.2), win.y, win.z);
+        this._m(slabXY(win.w, win.h, 12, 1).rotateY(Math.PI / 2), this._glassMat, s * (HW + 1.2), win.y, win.z);
       }
     }
     // rear panel with the chute's opening
@@ -70,7 +76,8 @@ Object.assign(MODEL, {
     this._box(W, HDR, 34, M.bodyDark, 0, DOOR_Y1 + HDR / 2, HD - 17);
     this._box(W, 34, 34, M.bodyDark, 0, H - 17, -HD + 17);
     for (const s of [-1, 1]) this._box(34, 34, D - 68, M.bodyDark, s * (HW - 17), H - 17, 0);
-    this._box(W - 68, 4, D - 68, M.glass, 0, H - 3, 0);                                   // removable glass lid
+    if (this._v.ed) this._lid = this._box(W - 68, 5, D - 68, M.black, 0, H - 3.5, 0);     // Laser Edition: black laser protection plate
+    else this._box(W - 68, 4, D - 68, M.glass, 0, H - 3, 0);                              // removable glass lid
     // front pillars and the sill under the door
     for (const s of [-1, 1]) this._box(PIL, DOOR_Y1 - 40, 30, silver, s * (HW - PIL / 2), (40 + DOOR_Y1) / 2, HD - 15);
     this._box(W - 2 * PIL, DOOR_Y0 - 36, T, M.bodyDark, 0, (36 + DOOR_Y0) / 2, HD - T / 2);
@@ -123,7 +130,7 @@ Object.assign(MODEL, {
     this._door = new T3.Group();
     this._door.position.set(-dw / 2, 0, HD - 2);
     this._scene.add(this._door);
-    this._m(slabXY(dw, dh, 3, 3), M.tint, dw / 2, DOOR_Y0 + 1 + dh / 2, 0, this._door);
+    this._m(slabXY(dw, dh, 3, 3), this._glassMat, dw / 2, DOOR_Y0 + 1 + dh / 2, 0, this._door);
     for (const y of [DOOR_Y1 - 30, DOOR_Y0 + 30]) this._box(10, 24, 5, M.steel, 5, y, 0, this._door);   // hinge tabs
     const grip = this._m(slabXY(14, 62, 7, 6), M.black, dw - 14, 290, 3.5, this._door, ent("door:front"));
     this._box(4, 40, 1, M.steel, -2, 0, 3.4, grip);
@@ -181,13 +188,14 @@ Object.assign(MODEL, {
     // right wall: PTC heater plate (finned) over the circulation fan, exhaust fan at the rear (wiki lining guides)
     const ptc = new T3.MeshStandardMaterial({ color: 0x3a3a3c, metalness: 0.6, roughness: 0.45, emissive: 0x000000 });
     const hx = HW - T - 5, hent = ent("heater:chamber");
-    this._box(6, 100, 150, ptc, hx, 410, 30, null, hent);
-    for (let k = 0; k < 9; k++) this._box(3, 2.4, 142, M.alu, hx - 3, 366 + k * 11, 30, null, hent);
+    const pz = this._v.h2c ? -75 : 30;                       // H2C: the hotend rack takes the front half of the right wall
+    this._box(6, 100, 150, ptc, hx, 410, pz, null, hent);
+    for (let k = 0; k < 9; k++) this._box(3, 2.4, 142, M.alu, hx - 3, 366 + k * 11, pz, null, hent);
     this._heat = { chamber: { mat: ptc, lo: 25, hi: 65 } };
-    this._fans.ventilation = this._fan(38, "x-", HW - T - 8, 300, 30, ent("fan:ventilation"));
+    this._fans.ventilation = this._fan(38, "x-", HW - T - 8, 300, pz, ent("fan:ventilation"));
     this._fans.exhaust = this._fan(30, "x-", HW - T - 8, 330, -165, ent("fan:exhaust"));
     this._chamberAnchor = new T3.Object3D();
-    this._chamberAnchor.position.set(HW - 12, 410, 30);
+    this._chamberAnchor.position.set(HW - 12, 410, pz);
     this._scene.add(this._chamberAnchor);
   },
 });

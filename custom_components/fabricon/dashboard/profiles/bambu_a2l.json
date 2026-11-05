@@ -1,0 +1,90 @@
+{
+  "key": "bambu.a2l",
+  "vendor": "Bambu Lab",
+  "name": "A2L",
+  "provider": "bambuddy",
+  "match": [
+    "A2L",
+    "N9"
+  ],
+  "mesh": "bambu.a1",
+  "build_volume": [
+    330,
+    320,
+    325
+  ],
+  "kinematics": "bedslinger",
+  "extruders": [
+    {
+      "id": "main",
+      "label": "Nozzle",
+      "short": "",
+      "heater": "nozzle"
+    }
+  ],
+  "heaters": [
+    {
+      "id": "nozzle",
+      "kind": "nozzle",
+      "label": "Nozzle",
+      "anchor": "nozzle.main"
+    },
+    {
+      "id": "bed",
+      "kind": "bed",
+      "label": "Bed",
+      "anchor": "bed"
+    }
+  ],
+  "fans": [
+    {
+      "id": "part",
+      "label": "Part",
+      "anchor": "fan.part"
+    },
+    {
+      "id": "hotend",
+      "label": "Hotend",
+      "anchor": "fan.hotend",
+      "auto": true,
+      "icon": "mdi:fan-auto"
+    }
+  ],
+  "airduct": false,
+  "lights": [
+    {
+      "id": "main",
+      "label": "Light",
+      "anchor": "light.main"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "chamber",
+      "label": "Chamber"
+    }
+  ],
+  "doors": [],
+  "filament": {
+    "units": [
+      "AMS Lite"
+    ],
+    "max_units": 1,
+    "external": [
+      {
+        "id": "main",
+        "tag": "EXT"
+      }
+    ]
+  },
+  "ai": [
+    "plate_position",
+    "filament_backup"
+  ],
+  "accessories": [
+    {
+      "key": "cutter",
+      "label": "Cutting / pen module fitted"
+    }
+  ]
+}

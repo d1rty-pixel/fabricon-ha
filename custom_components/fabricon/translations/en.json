@@ -40,7 +40,12 @@
         "data": {
           "ams": "AMS support (units are detected automatically)",
           "exhaust_box": "Exhaust fan kit fitted",
-          "aux_fan_2": "Second auxiliary fan fitted"
+          "aux_fan_2": "Second auxiliary fan fitted",
+          "laser": "Laser module fitted",
+          "laser_edition": "Laser Edition (green safety windows, black top plate)",
+          "cutter": "Cutting / pen module fitted",
+          "cut_tool": "CutTool on the tool rack",
+          "draw_tool": "DrawTool on the tool rack"
         }
       }
     }

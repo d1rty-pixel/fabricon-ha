@@ -6,7 +6,7 @@
 Object.assign(MODEL, {
   _build() {
     const T3 = this.T, M = this.M, c = this._cfg1(), sp = this._spec(), comp = (ref) => this._compEntity(ref);
-    const { tip: T, bed: B } = c, bh = c.base.h, hw = c.base.hw, z0 = c.base.z0, z1 = c.base.z1, bd = z1 - z0, bz = (z0 + z1) / 2;
+    const { tip: T, bed: B } = c, BZ = c.bedZ || B, bh = c.base.h, hw = c.base.hw, z0 = c.base.z0, z1 = c.base.z1, bd = z1 - z0, bz = (z0 + z1) / 2;
     const CZ = BEAM_Z - 6;                                  // column centre z
     const mini = c.cols.length === 1;
     this._clear = [];
@@ -64,12 +64,12 @@ Object.assign(MODEL, {
     this._bed = new T3.Group();
     this._bed.position.y = T;
     this._scene.add(this._bed);
-    this._bedPlate = this._box(B + 2, 3, B + 2, PEI, 0, -1.5, 0, this._bed, comp("heater:bed"));
+    this._bedPlate = this._box(B + 2, 3, BZ + 2, PEI, 0, -1.5, 0, this._bed, comp("heater:bed"));
     this._heat.bed = { mat: PEI, lo: 30, hi: 120 };
-    this._box(B - 4, 4, B - 4, M.plate, 0, -5, 0, this._bed);                                // heater
-    this._m(xz(B + 14, B + 10, 5, 8), AL, 0, -12, 0, this._bed);                             // carriage plate
-    this._box(60, 4, B * 0.55, DG, 0, -14, 0, this._bed);                                    // slider block on the rails
-    this._box(40, 14, 3, AL, 0, -7, B / 2 + 8, this._bed);                                   // front lip of the carriage
+    this._box(B - 4, 4, BZ - 4, M.plate, 0, -5, 0, this._bed);                                // heater
+    this._m(xz(B + 14, BZ + 10, 5, 8), AL, 0, -12, 0, this._bed);                             // carriage plate
+    this._box(60, 4, BZ * 0.55, DG, 0, -14, 0, this._bed);                                    // slider block on the rails
+    this._box(40, 14, 3, AL, 0, -7, BZ / 2 + 8, this._bed);                                   // front lip of the carriage
 
     // Z uprights: silver extrusions with a dark grey foot cap and a steel lead screw beside them (A1: top beam with
     // dark grey end caps; mini: one column with a black rail strip on the front and a dark cap on top)
@@ -101,7 +101,7 @@ Object.assign(MODEL, {
     const mx = mini ? cx + 28 : cx + 24;
     this._m(this._slabXY(mini ? 42 : 52, 52, 8, 44), WHITE, mx, by, mini ? CZ + 6 : CZ, g);
     this._box(26, 8, 10, WHITE, mx, by + 30, mini ? CZ + 6 : CZ, g);                         // cutter pin handle (photo: white bar on top)
-    const lt = this._text("BAMBU LAB A1", 36, 6, { color: "#6e7278", weight: 700 });
+    const lt = this._text(c.label || "BAMBU LAB A1", 36, 6, { color: "#6e7278", weight: 700 });
     lt.position.set(mx, by - 6, (mini ? CZ + 6 : CZ) + 22.6);
     g.add(lt);
     if (!mini) for (const x of [c.cols[0]]) this._box(cw + 10, 46, cd + 12, PL, x, by, CZ, g);   // left carriage block
@@ -166,22 +166,56 @@ Object.assign(MODEL, {
     this._nozzles.main = { g: nz, tip: ntip };
     this._heat.nozzle = { mat: tipM, lo: 60, hi: 300 };
 
+    // A2L cutting / pen module (wiki a2l-intro photos, "Cutting Module"): charcoal box with a lever on the left that takes
+    // the toolhead's place from the rail down to the blade; size estimated from the rail screw pitch. Hides the hotend.
+    if (this._fitted("cutter")) {
+      const CH = S({ color: 0x4a4c50, metalness: 0.15, roughness: 0.6 }), cm = this._cutter = new T3.Group();
+      hd.add(cm);
+      this._box(58, 100, 46, CH, 0, T + 70, 14, cm);                                         // body, covers the front of the head
+      this._box(14, 34, 24, CH, 0, T + 18, 22, cm);                                          // blade holder nose
+      this._cyl(2.2, 12, "y", M.steel, 0, T + 4, 22, cm, null, 10);                          // blade, tip at the nozzle line
+      this._box(5, 40, 8, M.black, -33, T + 62, 24, cm);                                     // quick-release lever (left)
+      const ct = this._text("Bambu Lab", 36, 6, { color: "#c9ccd0", weight: 700 });
+      ct.position.set(0, T + 100, 37.4);
+      cm.add(ct);
+      nz.visible = false;
+    }
+
     // external spool holder (wiki: white "F" part; the square clip with the logo hooks onto the top beam at the back,
     // the arm runs to the back, the spool shaft sticks out sideways, a PTFE connector at the end of the arm). A1:
     // middle right of the beam; mini: on the column.
     {
-      const hx = mini ? cx : 115, ty = top, ry = ty - 6, rz = -175, dir = -1;
       const ex = (sp.filament?.external || []).find((x) => x.id === "main")?.entity;
       const grp = new T3.Group();
-      grp.position.set(hx, ry, rz);
-      this._scene.add(grp);
-      this._box(30, 32, 28, WHITE, hx, ty - 4, CZ - cd / 2 - 8);                             // clip with the logo
-      this._box(16, 12, CZ - cd / 2 - 8 - rz + 55, WHITE, 0, 0, (CZ - cd / 2 - 8 - rz - 55) / 2, grp, ex);   // arm (past the shaft: the connector stub)
+      let ty = top, dir = -1;
+      if (c.holder === "beam") {
+        // A2L: grey two-part arm clipped onto the back of the X crossbeam at the left end (spool holder replacement guide:
+        // "remove the Spool Holder from the crossbeam"); post up, forearm tilted back, shaft sideways. Rides with the gantry.
+        const hx = bx0 + 70, pz = BEAM_Z - 22, ph = 110, th = 0.3, L = 90;
+        this._box(40, 38, 14, PL, hx, by, BEAM_Z - 17, g);                                     // clip on the beam (est. size)
+        this._box(14, ph, 14, PL, hx, by + ph / 2, pz, g);                                     // post
+        this._cyl(8, 16, "x", PL, hx, by + ph, pz, g, null, 16);                              // joint
+        grp.position.set(hx, by + ph + L * Math.sin(th), pz - L * Math.cos(th));
+        g.add(grp);
+        const fa = new T3.Group();
+        fa.position.set(hx - grp.position.x, -L * Math.sin(th), pz - grp.position.z);        // forearm, hinge at the post top
+        fa.rotation.x = th;
+        this._box(12, 12, L + 14, PL, 0, 0, -L / 2, fa);
+        grp.add(fa);
+        ty = by + ph;
+      } else {
+        const hx = mini ? cx : 115, ry = ty - 6, rz = -175;
+        grp.position.set(hx, ry, rz);
+        this._scene.add(grp);
+        this._box(30, 32, 28, WHITE, hx, ty - 4, CZ - cd / 2 - 8);                             // clip with the logo
+        this._box(16, 12, CZ - cd / 2 - 8 - rz + 55, WHITE, 0, 0, (CZ - cd / 2 - 8 - rz - 55) / 2, grp, ex);   // arm (past the shaft: the connector stub)
+      }
+      const stub = c.holder === "beam" ? -8 : -48;
       this._cyl(7, 78, "x", WHITE, dir * 39, 0, 0, grp, ex, 24);                             // shaft
       this._cyl(11, 4, "x", WHITE, dir * 80, 0, 0, grp, ex, 24);                             // end flange
-      this._cyl(4, 12, "y", M.black, 0, 10, -48, grp, null, 14);                              // PTFE connector at the stub
+      this._cyl(4, 12, "y", M.black, 0, 10, stub, grp, null, 14);                             // PTFE connector at the stub
       this._ptfeSrc = new T3.Object3D();
-      this._ptfeSrc.position.set(0, 18, -48);
+      this._ptfeSrc.position.set(0, 18, stub);
       grp.add(this._ptfeSrc);
       const spool = this._spool(grp, ex);
       spool.g.position.x = dir * 40;
@@ -196,7 +230,7 @@ Object.assign(MODEL, {
     const nozzles = ["heater:nozzle", "fan:part", "fan:hotend"];
     this._labelSpec = [
       { anchor: this._head, off: [0, T + HEAD_H + 22, 0], title: "TOOLHEAD", rows: nozzles },
-      { anchor: this._bedPlate, off: [B / 2 - 10, 4, B / 2 - 10], rows: ["heater:bed"] },
+      { anchor: this._bedPlate, off: [B / 2 - 10, 4, BZ / 2 - 10], rows: ["heater:bed"] },
       { anchor: this._gantry, off: this._camAnchor, title: "CAMERA", rows: ["light:main"] },
       { anchor: this._holders.main.spool.g, off: [0, 110, 0], rows: ["external:main"] },
     ];

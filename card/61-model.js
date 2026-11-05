@@ -10,6 +10,9 @@ const FAB_KINDS = { heater: (s) => s.heaters, fan: (s) => s.fans, light: (s) => 
 Object.assign(FabriconCard.prototype, {
   _spec() { return this._cfg.printer_spec || {}; },
 
+  // an accessory the user switched on for this printer (options; HA can't detect them), e.g. "laser"
+  _fitted(key) { return (this._spec().fitted || []).includes(key); },
+
   // a component of the spec by reference ("fan:part"), or undefined when the printer doesn't have it
   _comp(ref) {
     const [kind, id] = ref.split(":");
@@ -58,4 +61,5 @@ Object.assign(FabriconCard.prototype, {
   _xray(_on) {},
   _amsChanged(_units) {},
   _tubesUpdate() {},
+  _laser(_on) {},                     // a laser job started / ended (e.g. light the module's beam)
 });

@@ -6,11 +6,9 @@
   "match": [
     "H2D",
     "H2D PRO",
-    "H2C",
     "O1D",
     "O1E",
-    "O2D",
-    "O1C"
+    "O2D"
   ],
   "mesh": "bambu.h2d",
   "build_volume": [
@@ -136,5 +134,14 @@
     "air_printing",
     "filament_backup"
   ],
-  "accessories": []
+  "accessories": [
+    {
+      "key": "laser",
+      "label": "Laser module (10 W / 40 W) fitted"
+    },
+    {
+      "key": "laser_edition",
+      "label": "Laser Edition (green safety windows, black top plate, emergency stop)"
+    }
+  ]
 }

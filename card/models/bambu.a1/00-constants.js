@@ -12,6 +12,13 @@ const CFG = {
   a1mini: { w: 347, d: 315, h: 365, bed: 180, tip: 56, base: { hw: 173, z0: -110, z1: 175, h: 34 }, cols: [128], top: null,
         beam: [-128, 128], colTop: 336, scr: [108, 0.82], idle: 40, amsGap: [60, 60], colW: 50, colD: 40 },
 };
+// a2l: A2L photos (wiki /en/a2l, /en/a2l/manual/a2l-intro; outer size 544 x 529 x 505 from the FAQ): same frame concept as the
+// A1, scaled up. bedZ = plate depth (330 x 320); the 544 width comes from the X beam sticking out (wiper left, motor block
+// right); top = underside of the top beam (the beam reaches 460 at the full 325 mm Z travel); holder "beam" = the spool holder
+// clips onto the X crossbeam (spool holder replacement guide), not onto the top beam; label = text on the motor block.
+CFG.a2l = { w: 544, d: 529, h: 505, bed: 330, bedZ: 320, tip: 70, base: { hw: 210, z0: -195, z1: 235, h: 46 }, cols: [-188, 188],
+            top: 468, beam: [-196, 196], colTop: 505, scr: [140, 1.08], idle: 50, amsGap: [60, 60], colW: 40, colD: 38,
+            label: "BAMBU LAB A2L", holder: "beam" };
 const HEAD_H = 78;                       // nozzle tip to the top of the toolhead body (photo: ~75-85)
 const BEAM_Y = 52, BEAM_Z = -46;         // X beam centre above the nozzle tip, and behind the nozzle line
 // colours read off the wiki photos: anodised light silver frame, light grey plastic base / head, dark grey end caps and stand

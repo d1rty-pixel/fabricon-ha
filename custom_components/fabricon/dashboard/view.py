@@ -23,7 +23,8 @@ def model(spec, stl_version):
     return {"type": "custom:fabricon-card", "printer": P, "ams": option(spec, "ams", o), "exhaust_box": option(spec, "exhaust_box", o),
             **({"stl": f"/local/{STL}?v={stl_version}"} if stl_version else {}),
             "height": "fill", "serial": P_SERIAL, "camera": spec["cameras"][0]["entity"] if spec["cameras"] else None,
-            "printer_spec": {**card_spec(spec), "fans": panels.fan_list(spec)},
+            "printer_spec": {**card_spec(spec), "fans": panels.fan_list(spec),          # fitted: accessories switched on
+                             "fitted": [a["key"] for a in spec["accessories"] if option(spec, a["key"], o)]},
             "panels": panels.panels(spec), "footer": footer(spec), "footer_columns": "2.6fr 1fr 1fr 2.1fr 3.2fr",
             # phones: Start, Stop / Pause, Resume, Speed (2 + 2 / 1 + 1 + 2 of 4 columns)
             "footer_narrow": {"columns": "repeat(4, minmax(0, 1fr))", "span": {0: 2, 3: 2, 4: 2}, "order": [0, 3, 1, 2, 4]}}
