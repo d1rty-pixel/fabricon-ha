@@ -19,7 +19,8 @@ A spec (all entity ids are complete ids, None where the provider has nothing):
   cameras:   [{id, label, entity}]
   doors:     [{id, label, anchor, entity}]
   extruders: [{id, label, heater, type, diameter}]
-  filament:  {units: [AMS models the printer takes] (found at runtime), max_units, external: [{id, tag, entity}]}
+  filament:  {units: [AMS models the printer takes] (found at runtime), max_units, external: [{id, tag, entity}],
+             fixed?: [{probe (slot 1 sensor), dev, id, model, slots}] units given here instead (demo printers)}
   ai:        [{id, label, icon, entity}]
   telemetry: [{label, icon, entity, kind?}]   readouts (kind "firmware": the firmware row; "extruders": the nozzle rows)
   stats:     [{label, icon, entity}]          maintenance statistics

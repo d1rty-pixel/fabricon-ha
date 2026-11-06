@@ -69,8 +69,9 @@ def demo_states(states, P):
 
 
 # One demo per printer model with a profile of its own (besides the X2D, whose state demos above copy the real
-# printer): a printer HA doesn't have, its states made up from the profile's components, printing. No AMS (units are
-# found through the device registry, which a demo isn't in).
+# printer): a printer HA doesn't have, its states made up from the profile's components, printing. AMS units are found
+# through the device registry, which a demo isn't in: a printer that takes an AMS Lite gets one in its spec
+# (filament.fixed, slots in model_states), the others none.
 MODEL_DEMOS = [("x1c", "X1C", "Demo · X1 Carbon"), ("p1s", "P1S", "Demo · P1S"), ("p2s", "P2S", "Demo · P2S"),
                ("h2d", "H2D", "Demo · H2D"), ("h2c", "H2C", "Demo · H2C"), ("h2s", "H2S", "Demo · H2S"),
                ("a1", "A1", "Demo · A1"), ("a1mini", "A1 MINI", "Demo · A1 mini"), ("a2l", "A2L", "Demo · A2L")]
@@ -86,6 +87,9 @@ def model_printers():
              "model": model, "name": name, "provider": prov.NAME}
         p["spec"] = spec_.bind(p, spec_.match(prov.NAME, model), prov.TABLE, None)
         p["spec"]["id"] = f'demo:{p["slug"]}'
+        if "AMS Lite" in p["spec"]["filament"]["units"]:
+            p["spec"]["filament"]["fixed"] = [{"probe": f'sensor.{p["P"]}_ams_lite_slot_1', "dev": f'demo_ams_{k}', "id": "A",
+                                               "model": "AMS Lite", "slots": 4}]
         out.append(p)
     return out
 
@@ -131,9 +135,15 @@ def model_states():
         for x in sp["extruders"]:
             put(x["type"], "hardened_steel", friendly_name=fn("nozzle type"))
             put(x["diameter"], "0.4", unit_of_measurement="mm", friendly_name=fn("nozzle diameter"))
+        fixed = sp["filament"].get("fixed", [])
         for i, x in enumerate(sp["filament"]["external"]):
-            put(x["entity"], "loaded", type="PETG", color=["#2b6cff", "#e03a3a"][i % 2], remaining=60, active=i == 0, empty=False,
-                name="Demo PETG", friendly_name=fn(x["tag"]))
+            put(x["entity"], "loaded", type="PETG", color=["#2b6cff", "#e03a3a"][i % 2], remaining=60, active=i == 0 and not fixed,
+                empty=False, name="Demo PETG", friendly_name=fn(x["tag"]))
+        for u in fixed:   # four spools, slot 1 feeding, slot 4 empty
+            for i, (typ, col, rem) in enumerate([("PLA", "#ffb400", 80), ("PLA", "#ffffff", 55), ("PETG", "#2e9e4f", 30), (None, None, 0)]):
+                eid = u["probe"][:-1] + str(i + 1)
+                put(eid, f"Demo {typ}" if typ else "empty", type=typ, color=col, remaining=rem, active=i == 0, empty=not typ,
+                    name=f"Demo {typ}" if typ else None, friendly_name=f'{name} AMS {u["id"]} slot {i + 1}')
         for x in sp["ai"]:
             put(x["entity"], "on", friendly_name=fn(x["label"]))
     return out

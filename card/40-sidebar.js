@@ -73,8 +73,12 @@ Object.assign(FabriconCard.prototype, {
   // out; with the printer off every registered unit is shown.
   // The registry scan runs only when HA hands out new registries.
   _findAms() {
-    const h = this._hass;
-    if (this._cfg.ams === false || !h?.entities || !h?.devices) return [];
+    const h = this._hass, fixed = this._spec().filament?.fixed;
+    if (this._cfg.ams === false) return [];
+    // units the spec names itself (demo printers: not in the registry), probe = their slot 1 sensor
+    if (fixed?.length) return (this._amsFixed ||= fixed.map((u, i) => ({ prefix: u.probe.slice(7, -"_slot_1".length), dev: u.dev || "",
+      probe: u.probe, id: u.id || "ABCDEFGH"[i], model: (u.model || "AMS").toUpperCase(), slots: u.slots || 4 })));
+    if (!h?.entities || !h?.devices) return [];
     if (this._amsReg?.[0] !== h.entities || this._amsReg?.[1] !== h.devices) {
       const pdev = h.entities[this._spec().core?.status]?.device_id, found = [];
       for (const d of Object.values(h.devices)) {
