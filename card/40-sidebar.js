@@ -62,10 +62,12 @@ Object.assign(FabriconCard.prototype, {
     if (p) this._openPanel(p.key, id);
   },
 
-  // a panel's per-AMS cards for one unit, its prefix, letter and device id filled in
+  // a panel's per-AMS cards for one unit, its prefix, letter and device id filled in. A card bound to an entity the
+  // unit doesn't have is left out (the AMS Lite has no humidity sensor: no climate / dryer card)
   _perAms(p, u) {
-    const src = JSON.stringify(p.per_ams);
-    return JSON.parse(src.replaceAll("__AMS_DEV__", u.dev).replaceAll("__AMS_ID__", u.id).replaceAll("__AMS__", u.prefix));
+    const src = JSON.stringify(p.per_ams), h = this._hass;
+    return JSON.parse(src.replaceAll("__AMS_DEV__", u.dev).replaceAll("__AMS_ID__", u.id).replaceAll("__AMS__", u.prefix))
+      .filter((c) => !c.entity || !c.entity.startsWith(`sensor.${u.prefix}_`) || h?.entities?.[c.entity] || h?.states?.[c.entity]);
   },
 
   // AMS units: the devices the integration hangs under the printer, with slot sensors. One the printer, while
