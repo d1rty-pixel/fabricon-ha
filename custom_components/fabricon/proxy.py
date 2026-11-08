@@ -13,6 +13,8 @@ POST /api/fabricon/<serial>/print                 {path, plate_id, ams_mapping, 
 
 Demo printers (serial DEMO-*, see dashboard/demo.py): the view answers them with an empty USB stick.
 """
+import logging
+
 from aiohttp import web
 from homeassistant.components.http import HomeAssistantView
 
@@ -23,6 +25,8 @@ try:
     from homeassistant.components.http import KEY_HASS
 except ImportError:  # older cores
     KEY_HASS = "hass"
+
+_LOG = logging.getLogger(__name__)
 
 
 def _fail(status, text):
@@ -69,8 +73,12 @@ class PrintView(HomeAssistantView):
                 return web.json_response(await be.print(serial, body))
             return _fail(404, f"unknown action {action}")
         except Upstream as err:
+            if request.method == "POST":   # a refused print is otherwise only seen in the browser
+                _LOG.warning("%s %s for %s: %s", action, err.status, serial, err.text)
             return _fail(err.status, err.text)
         except (TypeError, ValueError) as err:
+            if request.method == "POST":
+                _LOG.warning("%s for %s: %s", action, serial, err)
             return _fail(400, str(err))
 
     @staticmethod

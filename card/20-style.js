@@ -135,6 +135,8 @@ const CSS = `
   gap: 14px; padding: 0 16px; cursor: pointer; color: #0b0b0b; background: linear-gradient(180deg, #ffc53a, #e09a00);
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.4), 0 6px 18px rgba(255,180,0,.25);
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+.startkey.fail { background: linear-gradient(180deg, #ff8a3a, #d95500); }
+.startkey.fail small { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .startkey ha-icon { --mdc-icon-size: 34px; flex: none; }
 .startkey span { min-width: 0; text-align: left; }
 .startkey b { display: block; font: 22px var(--fab-font, sans-serif); letter-spacing: 4px; line-height: 1.05; white-space: nowrap; }

@@ -1,10 +1,17 @@
 // HMS messages, each with the answers the printer offers for it now (bambuddy.answer_hms). Inline handlers
 // reach hass through <home-assistant>; stopping / aborting asks first. fabHmsOpen() drops what is settled:
 // the printer keeps a notice in its list for the rest of the job even after it was answered at the screen,
-// so a notice without answers counts only while the job is paused or failed. $DEV = the printer's device id.
+// so a notice without answers counts only while the job is paused or failed. fabHmsAlarm() (the alarm under the
+// header) keeps only what needs someone now: answers offered, a paused / failed job, or a serious / fatal message;
+// an error without answers while the printer carries on (an AMS slot whose tag can't be read) stays in the HMS
+// panel only. $DEV = the printer's device id.
 const fabHmsOpen = () => {
   const ps = states['sensor.$P_print_status']?.state, errs = states['sensor.$P_hms_errors']?.attributes.errors || [];
   return errs.filter((x) => (x.actions || []).length || !['notice', 'info', ''].includes(x.severity || '') || ['paused', 'failed'].includes(ps));
+};
+const fabHmsAlarm = () => {
+  const ps = states['sensor.$P_print_status']?.state;
+  return fabHmsOpen().filter((x) => (x.actions || []).length || ['paused', 'failed'].includes(ps) || ['serious', 'fatal'].includes(x.severity));
 };
 const fabHms = (errs) => {
   const col = (s) => ({error: 'var(--fab-r)', serious: 'var(--fab-r)', fatal: 'var(--fab-r)', warning: 'var(--fab-o)'})[s] || 'var(--fab-y)';

@@ -16,9 +16,10 @@ def header():
 
 def status_bar():
     """Under the header: the HMS alarm while it applies. (Locked controls show only on the controls themselves; an
-    offline printer is shown on the model.)"""
+    offline printer is shown on the model.) The card has no entity and no action, so button-card marks it
+    `disabled` (pointer-events: none): the card style turns pointer events back on for the keys inside."""
     hms = js(JS_HMS + f"""
-const errs = fabHmsOpen();
+const errs = fabHmsAlarm();
 if (!errs.length) return '';
 const ps = states['sensor.$P_print_status']?.state;
 const key = (txt, js) => `<button onclick="event.stopPropagation();${{js}}" onpointerdown="event.stopPropagation()" style="font:13px var(--fab-font);letter-spacing:2px;
@@ -33,7 +34,8 @@ return `<div style="margin-bottom:8px;padding:4px 14px 6px;background:linear-gra
   ${{fabHms(errs)}}</div>`;
 """)
     return bc("fab_base", show_icon=False, show_name=False, show_state=False, triggers_update=[e("sensor", "print_status"), e("sensor", "hms_errors")],
-              styles={"card": css({"background": "none", "box-shadow": "none", "padding": "0", "height": "auto", "overflow": "visible"}),
+              styles={"card": css({"background": "none", "box-shadow": "none", "padding": "0", "height": "auto", "overflow": "visible",
+                                   "pointer-events": "auto"}),
                       "grid": css({"grid-template-areas": '"hms"', "grid-template-columns": "minmax(0,1fr)", "row-gap": "0"}),
                       "custom_fields": {"hms": css({"min-width": "0", "justify-self": "stretch", "width": "100%"})}},
               extra_styles=NO_CHAMFER,

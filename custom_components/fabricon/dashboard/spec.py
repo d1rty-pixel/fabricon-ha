@@ -34,8 +34,7 @@ import os
 PROFILES = os.path.join(os.path.dirname(__file__), "profiles")
 
 
-def profiles():
-    """Every model profile, by key (read at call time, so fabricon.rebuild picks up edits)."""
+def _load():
     out = {}
     for f in sorted(os.listdir(PROFILES)):
         if f.endswith(".json"):
@@ -43,6 +42,16 @@ def profiles():
                 p = json.load(fh)
             out[p["key"]] = p
     return out
+
+
+# read once at import (HA imports the generator in an executor; spec is used in the event loop afterwards, where
+# file access blocks); fabricon.rebuild reloads this module and so picks up edited profiles
+_PROFILES = _load()
+
+
+def profiles():
+    """Every model profile, by key."""
+    return _PROFILES
 
 
 def match(provider, model):

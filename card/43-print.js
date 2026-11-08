@@ -268,8 +268,12 @@ Object.assign(FabriconCard.prototype, {
     const key = [why, P.sel?.path, q?.status, q?.text].join("|");
     if (key === P.stateKey) return;
     P.stateKey = key;
+    // a failed start says why on the key itself (it stays pressable for another try)
+    const failed = !why && q?.status === "failed";
     b.disabled = !!why;
-    b.querySelector("small").textContent = why || `${P.sel.name.replace(SLICED_RE, "")} · ${durText(i.time)}`;
+    b.classList.toggle("fail", failed);
+    b.querySelector("small").textContent = why || (failed ? `NOT STARTED · ${q.text || "unknown error"}`
+      : `${P.sel.name.replace(SLICED_RE, "")} · ${durText(i.time)}`);
     const stat = P.job.querySelector(".pstat");
     if (!stat) return;
     stat.className = `pstat ${q?.status === "failed" ? "warn" : ""}`;
