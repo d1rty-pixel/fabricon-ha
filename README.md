@@ -16,11 +16,11 @@ A Home Assistant dashboard for Bambu Lab printers managed by [BamBuddy](https://
 Fabricon is a single Home Assistant integration. You install it and add it, and the dashboard **Fabricon** appears in
 the sidebar. There is nothing to run on your computer and no YAML to write.
 
-[![Open your Home Assistant instance and open the Fabricon repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=d1rty-pixel&repository=fabricon-ha&category=integration)
+[![Open your Home Assistant instance and open the Fabricon repository in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=d1rty-pixel&repository=fabricon-ha&category=integration)
 [![Open your Home Assistant instance and start setting up Fabricon.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=fabricon)
 
-The first button installs Fabricon through HACS, the second adds it after the restart (details in
-[Installation](#installation)).
+The first button installs Fabricon through the Marketplace (HACS before Home Assistant 2026.11), the second adds
+it after the restart (details in [Installation](#installation)).
 
 ### Supported printers
 
@@ -47,7 +47,7 @@ are welcome.
 ## Contents
 
 - [Requirements](#requirements) · [BamBuddy API key](#bambuddy-api-key)
-- [Installation](#installation): [HACS](#method-1-hacs-recommended) ·
+- [Installation](#installation): [Marketplace](#method-1-marketplace-recommended) ·
   [manual from a release](#method-2-manual-install-from-a-release) · [from source](#method-3-from-source) ·
   [add the integration](#add-the-integration)
 - [Options](#options) · [Updating](#updating) · [Uninstalling](#uninstalling)
@@ -59,10 +59,10 @@ are welcome.
 
 | What | Needed for | Notes |
 |---|---|---|
-| Home Assistant | everything | tested with 2026.10; use a current release |
+| Home Assistant | everything | tested with 2026.11; use a current release |
 | [BamBuddy](https://github.com/maziggy/bambuddy) | printer data, files, print queue | running, with your printer(s) added |
 | [BamBuddy integration](https://github.com/Spegeli/hacs_bambuddy) | the printer's entities in HA | set up **before** Fabricon, with an API key that has the permissions [below](#bambuddy-api-key) |
-| [button-card](https://github.com/custom-cards/button-card) 7.x | the panels and keys | HACS → *Frontend*, or by hand (see below) |
+| [button-card](https://github.com/custom-cards/button-card) 7.x | the panels and keys | *Settings → Marketplace* (HACS before HA 2026.11), or by hand (see below) |
 | [kiosk-mode](https://github.com/NemesisRE/kiosk-mode) | optional | hides HA's header and sidebar on the Fabricon dashboard |
 | A browser with internet access | the 3D model | three.js is loaded from jsDelivr |
 
@@ -82,12 +82,13 @@ key than the BamBuddy integration itself asks for**:
 | **Manage Maintenance** | BamBuddy integration | marking maintenance done |
 | **Manage Queue** | Fabricon | START: queueing the job |
 | **Manage Library** | Fabricon | START: BamBuddy can only queue files from its library, so the file is copied there first (removed again after it was sent) |
+| *Manage Inventory* (optional) | BamBuddy integration | assigning inventory spools to AMS slots; Fabricon doesn't use it |
 
 **Setting up a new key with all five permissions:**
 
 1. In BamBuddy, open **Settings → API Keys → Create Key**.
 2. Name it, e.g. `Home Assistant`, and tick **Read Status, Control Printer, Manage Queue, Manage Library and
-   Manage Maintenance**.
+   Manage Maintenance**. Tick **Manage Inventory** too if you assign spools from BamBuddy's inventory in HA.
 3. Copy the key. BamBuddy shows it only once.
 4. In Home Assistant: *Settings → Devices & services → BamBuddy → ⋮ → **Reconfigure***, and enter the new key. If
    you're setting up the BamBuddy integration for the first time, enter it there instead.
@@ -100,12 +101,14 @@ Also good to know (from BamBuddy):
 
 - With **authentication** on in BamBuddy (*Settings → Authentication*), a key can do at most what its owner may do.
   Create it as a user who is allowed to control printers, use the queue and the library.
+- A key limited to certain printers only reaches those: Fabricon can't list files on the others or start
+  prints there.
 - With authentication off, BamBuddy ignores permissions entirely. That works, but anyone on your network can then
   control your printers.
 - The printer must be in **LAN mode with developer mode** on. Otherwise the printer ignores the commands BamBuddy
   passes on (see the BamBuddy integration's troubleshooting).
 
-### button-card without HACS
+### button-card without the Marketplace
 
 1. Download `button-card.js` from the [button-card releases](https://github.com/custom-cards/button-card/releases).
 2. Copy it to `/config/www/button-card.js` on your HA host. If the `www` folder doesn't exist yet, create it and
@@ -117,31 +120,41 @@ Also good to know (from BamBuddy):
 
 Pick **one** of the three methods. Then [add the integration](#add-the-integration).
 
-### Method 1: HACS (recommended)
+### Method 1: Marketplace (recommended)
 
-You need [HACS](https://hacs.xyz/docs/use/). HACS also handles updates for you.
+Since Home Assistant 2026.11, HACS is built in as the **Marketplace** (*Settings → Marketplace*). It also handles
+updates for you. Fabricon isn't in the community catalog, so you add it from its GitHub link. That needs a GitHub
+connection once: the Marketplace asks you to **Connect GitHub** when you add it.
 
-**Quick way:** click this button. It opens Fabricon in HACS on your own Home Assistant (the first time, it asks
-for your Home Assistant's address and remembers it):
+The first time you open the Marketplace, it shows a warning about community items. Tick **I understand the risks
+and agree** and click **Continue**. Until then, nothing can be installed or updated.
 
-[![Open your Home Assistant instance and open the Fabricon repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=d1rty-pixel&repository=fabricon-ha&category=integration)
+**Quick way:** click this button. It opens Fabricon in the Marketplace on your own Home Assistant (the first time,
+it asks for your Home Assistant's address and remembers it):
 
-Click **Add** when HACS asks whether to add the repository, then **Download**, then restart Home Assistant
-(*Settings → System → ⋮ (top right) → Restart Home Assistant*).
+[![Open your Home Assistant instance and open the Fabricon repository in the Marketplace.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=d1rty-pixel&repository=fabricon-ha&category=integration)
+
+Confirm **Add custom repository**, then **Install**, then restart Home Assistant (the Marketplace offers
+**Restart Home Assistant**, or *Settings → System → ⋮ (top right) → Restart Home Assistant*).
 
 **By hand**, if the button doesn't work:
 
-1. Open **HACS** in the sidebar.
-2. Click **⋮** (top right) → **Custom repositories**.
-3. Enter `https://github.com/d1rty-pixel/fabricon-ha`, choose the type **Integration** and click **Add**.
-4. Search HACS for **Fabricon**, open it and click **Download**. Choose the latest version.
-5. **Restart Home Assistant**: *Settings → System → ⋮ (top right) → Restart Home Assistant*.
+1. Open *Settings → **Marketplace***.
+2. Open the tab **Add from link**.
+3. Enter `https://github.com/d1rty-pixel/fabricon-ha` as the **GitHub link**, choose the type **Integration** and
+   click **Add**.
+4. Open **Fabricon** and click **Install**. Choose the latest version.
+5. **Restart Home Assistant**.
 
-If HACS shows an error at step 3 or 4, use method 2.
+If the Marketplace shows an error at step 3 or 4, use method 2.
+
+**Home Assistant 2026.10 or older:** use HACS instead. *HACS → ⋮ (top right) → Custom repositories*, add the link
+above as an **Integration**, then search HACS for **Fabricon**, **Download** it and restart Home Assistant. When you
+update Home Assistant to 2026.11, the Marketplace takes Fabricon over from HACS.
 
 ### Method 2: Manual install from a release
 
-For when HACS isn't available or doesn't work. You need a way to put files into Home Assistant's `/config`
+For when the Marketplace isn't available or doesn't work. You need a way to put files into Home Assistant's `/config`
 folder. Any of these works:
 
 - the **File editor** add-on, or **Studio Code Server** (*Settings → Add-ons → Add-on store*). Both can upload files.
@@ -227,7 +240,8 @@ rebuild anyway. To change it, change the code (see [Development](#development)).
 
 ## Updating
 
-- **HACS**: when HACS offers an update for Fabricon, click *Update* and restart Home Assistant.
+- **Marketplace**: when an update for Fabricon shows up (*Settings → Marketplace → Updates*, or under *Settings →
+  Updates*), install it and restart Home Assistant.
 - **Manual / from source**: replace the contents of `/config/custom_components/fabricon/` with the new release or
   build. Delete the old files first, then restart Home Assistant.
 
@@ -237,7 +251,8 @@ showing.
 ## Uninstalling
 
 1. *Settings → Devices & services → Fabricon → ⋮ → **Delete***. The dashboard disappears right away.
-2. Remove the files: in HACS (*Fabricon → ⋮ → Remove*), or delete `/config/custom_components/fabricon/`.
+2. Remove the files: Home Assistant asks right after step 1 whether to also uninstall Fabricon from the Marketplace
+   (**Uninstall**). Installed by hand: delete `/config/custom_components/fabricon/`.
 3. Restart Home Assistant.
 
 ## Using the dashboard
@@ -344,7 +359,7 @@ A new Bambu model is mostly data: a profile in `dashboard/profiles/` (and option
 A new printer system needs a provider module (`dashboard/providers/`) and, for the print dock, a backend.
 
 Releases: push a tag like `v0.2.0`. The release workflow bundles the card, sets the version and publishes
-`fabricon.zip`, which HACS installs. See [CLAUDE.md](CLAUDE.md) for the code conventions.
+`fabricon.zip`, which the Marketplace (and HACS) installs. See [CLAUDE.md](CLAUDE.md) for the code conventions.
 
 ## License
 
