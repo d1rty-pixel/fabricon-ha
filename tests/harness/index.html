@@ -12,9 +12,14 @@
 // The card with a made-up Home Assistant: config from a golden dashboard (tests/golden/<fixture>.json, first view),
 // states made up from the printer's spec for the chosen state. Services are logged, the print proxy answers 404.
 const q = new URLSearchParams(location.search), fixture = q.get("fixture") || "x2d", state = q.get("state") || "printing";
+// a print_stage while printing (&stage=auto_bed_leveling): before the first layer unless &layer= says otherwise
+const stage = q.get("stage") || (["printing", "paused"].includes(state) ? (state === "paused" ? "paused_by_user" : "printing") : "unknown");
+const prep = stage !== "printing" && state === "printing" && q.get("layer") == null;
 const bar = document.getElementById("bar");
 bar.innerHTML = ["x2d", "x1c", "p1s", "p2s", "a1", "a2l", "h2d", "h2c", "h2s", "h3c"].map((f) => `<a href="?fixture=${f}&state=${state}">${f}</a>`).join(" ")
   + " · " + ["printing", "idle", "paused", "finished", "offline"].map((s) => `<a href="?fixture=${fixture}&state=${s}">${s}</a>`).join(" ")
+  + " · " + ["heatbed_preheating", "homing_toolhead", "auto_bed_leveling", "vibration_compensation", "cleaning_nozzle_tip", "calibrating_dynamic_flow",
+    "changing_filament", "inspecting_first_layer"].map((st) => `<a href="?fixture=${fixture}&state=printing&stage=${st}">${st.replace(/_/g, " ")}</a>`).join(" ")
   + ` · mesh <input id="mesh" size="12" placeholder="(spec)" value="${q.get("mesh") || ""}">`;
 document.getElementById("mesh").addEventListener("change", (e) => { q.set("mesh", e.target.value); location.search = q; });
 
@@ -40,8 +45,9 @@ for (const e of reg.ents) set(e.entity_id, "unknown");
 const on = state !== "offline", run = ["printing", "paused"].includes(state);
 set(c.status, state === "printing" ? "printing" : state === "offline" ? "offline" : state === "idle" ? "idle" : state);
 set(c.online, on ? "on" : "off");
+set(c.stage, stage);
 if (on) {
-  set(c.progress, run ? 42 : state === "finished" ? 100 : 0); set(c.layer, 57); set(c.layers, 141); set(c.job, run ? "Harness benchy" : "unknown");
+  set(c.progress, prep ? 0 : run ? 42 : state === "finished" ? 100 : 0); set(c.layer, prep ? 0 : q.get("layer") ?? 57); set(c.layers, 141); set(c.job, run ? "Harness benchy" : "unknown");
   for (const h of sp.heaters) { const t = { nozzle: 220, bed: 65, chamber: 40 }[h.kind] * (run ? 1 : 0.15) + (run ? 0 : 22); set(h.temp, t.toFixed(1)); set(h.target, run ? { nozzle: 220, bed: 65, chamber: 40 }[h.kind] : 0); }
   for (const f of sp.fans) f.auto ? set(f.entity, run ? 100 : 0) : set(f.entity, run ? "on" : "off", { percentage: run ? 70 : 0 });
   for (const l of sp.lights) set(l.entity, "on");

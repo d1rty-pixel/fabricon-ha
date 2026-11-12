@@ -7,7 +7,7 @@ Object.assign(MODEL, {
   },
 
   _geometry() {
-    return { w: W, d: D, h: H, tip: TIP, idle: 60, bed: this._bedSize(), kinematics: "corexy_bed_z", focus: 340,
+    return { w: W, d: D, h: H, tip: TIP, idle: 60, bed: this._bedSize(), kinematics: "corexy_bed_z", focus: 340, park: [CHUTE[0], -225],
              amsTop: { y: AMS_Y, z: AMS_Z }, amsGap: [60, 40] };
   },
 

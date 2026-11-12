@@ -2,7 +2,7 @@
 Object.assign(MODEL, {
   // the machine's outline and the numbers the view, the motion and the AMS placement work with
   _geometry() {
-    return { w: W, d: D, h: H, tip: TIP, idle: 60, bed: [256, 256], kinematics: "corexy_bed_z", focus: 375,
+    return { w: W, d: D, h: H, tip: TIP, idle: 60, bed: [256, 256], kinematics: "corexy_bed_z", focus: 375, park: [CHUTE[0], -172],
              amsTop: { y: AMS_Y, z: AMS_Z }, amsGap: [40, 140] };
   },
 

@@ -38,6 +38,12 @@ Object.assign(FabriconCard.prototype, {
     const NA = "—", DIM = "#7d776b";
     const known = (id) => { const st = id && this._st(id)?.state; return st != null && !["unavailable", "unknown", ""].includes(st); };
     const deg = (x) => (x == null ? NA : Math.round(x) + "°");
+    // the firmware reports RUNNING while it heats, levels, calibrates or changes filament: only the stage
+    // "printing" (or, without a stage, a reported layer) means the nozzle is laying down the file's moves
+    const stage = known(core.stage) ? this._st(core.stage).state : null, layer = this._num(core.layer) || 0;
+    const extruding = s === "printing" && (stage ? stage === "printing" : layer >= 1);
+    // the active spool: forward while it feeds, backwards while the printer pulls the filament out
+    const feed = extruding || ["loading_filament", "changing_filament"].includes(stage) ? 1 : stage === "unloading_filament" ? -1 : 0;
 
     // heaters: glow on the model's part, measured / target on the label
     for (const h of sp.heaters || []) {
@@ -87,7 +93,7 @@ Object.assign(FabriconCard.prototype, {
       const a = (domain, key) => `${domain}.${u.prefix}_${key}`;
       u.spools.forEach((spl, i) => {
         const sid = a("sensor", `slot_${i + 1}`), at = this._st(sid)?.attributes || {}, na = !known(sid);
-        const empty = this._spoolState(spl, at, s);
+        const empty = this._spoolState(spl, at, feed);
         if (at.active && !empty) activeColor = at.color;
         spl.lamp.material.color.set(at.active ? 0xffb400 : empty ? 0x222222 : 0x3a7a3a);
         L(`slot${k}_${i}`, na ? `${u.id}${i + 1}` : `${u.id}${i + 1} · ${at.active ? "ACTIVE" : empty ? "EMPTY" : "LOADED"}`,
@@ -105,7 +111,7 @@ Object.assign(FabriconCard.prototype, {
     // external spools (on the model's holders, where it has them)
     for (const x of sp.filament?.external || []) {
       const at = this._st(x.entity)?.attributes || {}, na = !known(x.entity), h = this._holders[x.id];
-      const empty = h ? this._spoolState(h.spool, at, s) : at.empty !== false && !at.type;
+      const empty = h ? this._spoolState(h.spool, at, feed) : at.empty !== false && !at.type;
       if (at.active && !empty) activeColor = at.color;
       L(`external:${x.id}`, na ? x.tag : `${x.tag} · ${at.active ? "ACTIVE" : empty ? "EMPTY" : "LOADED"}`,
         na || empty ? NA : `${at.type || NA} ${at.remaining != null ? at.remaining + " %" : ""}`.trim(), at.active ? "#FFB400" : na || empty ? DIM : (at.color || "#FFB400"));
@@ -120,11 +126,12 @@ Object.assign(FabriconCard.prototype, {
     this._feedColour = fil?.attributes?.color || activeColor;
     if (this._printMat) this._printMat.color.set(this._feedColour || "#FFB400");
     const prog = (this._num(core.progress) || 0) / 100;
-    this._job = { s, active, printing: s === "printing", prog: s === "finished" ? 1 : prog,
-      layer: this._num(core.layer) || 0, layers: this._num(core.layers) || 0 };
+    this._job = { s, active, printing: s === "printing", extruding, stage,
+      prog: s === "finished" ? 1 : prog, layer, layers: this._num(core.layers) || 0 };
     const name = this._st(core.job)?.state;
     this._hud.innerHTML = `STATUS <span>${s.replace(/_/g, " ")}</span> · PROGRESS <span>${known(core.progress) ? Math.round(prog * 100) + " %" : NA}</span>`
       + (laser ? ` · MODE <span>LASER</span>` : active ? ` · LAYER <span>${this._job.layer}/${this._job.layers}</span>` : "")
+      + (this._job.printing && !extruding && this._job.stage ? ` · <span>${this._job.stage.replace(/_/g, " ").toUpperCase()}</span>` : "")
       + (name && !["unknown", "unavailable"].includes(name) ? `<br>JOB <span>${name}</span>` : "")
       + (this._gc ? `<br>MOTION <span>G-CODE REPLAY</span>${active && this._job.layers && this._gc.layerCount !== this._job.layers
           ? ` · <span class="warn">FILE HAS ${this._gc.layerCount} LAYERS, JOB ${this._job.layers}</span>` : ""}`
@@ -163,8 +170,8 @@ Object.assign(FabriconCard.prototype, {
   },
 
   // A spool from its sensor's attributes: winding in the filament colour, sized by what is left (3/4 when unknown),
-  // glowing while it feeds, turning while it prints. Returns whether it is empty.
-  _spoolState(sp, at, status) {
+  // glowing while it feeds, turning with feed (1 forward, -1 back, 0 still). Returns whether it is empty.
+  _spoolState(sp, at, feed) {
     const empty = at.empty !== false && !at.type;
     sp.fil.visible = !empty;
     if (!empty) {
@@ -175,7 +182,7 @@ Object.assign(FabriconCard.prototype, {
       sp.fil.scale.set(1, rad, rad);   // unit-radius cylinder along X: scale its round axes
       sp.fil.material.emissive.copy(col).multiplyScalar(at.active ? 0.25 : 0);
     }
-    sp.spin = !empty && at.active && status === "printing";
+    sp.spin = !empty && at.active ? feed : 0;
     return empty;
   },
 

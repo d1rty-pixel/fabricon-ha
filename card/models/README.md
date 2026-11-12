@@ -45,9 +45,10 @@ Everything is optional except head and bed. The core resets these before `_build
 
 ## Methods
 
-- `_geometry()` (required): `{w, d, h, tip, idle, bed: [x, y], kinematics: "corexy_bed_z" | "bedslinger", focus, amsTop: {y, z} | null, amsGap: [left, right]}`.
+- `_geometry()` (required): `{w, d, h, tip, idle, bed: [x, y], kinematics: "corexy_bed_z" | "bedslinger", focus, park?, wipe?, amsTop: {y, z} | null, amsGap: [left, right]}`.
   `tip` = nozzle height over the floor at layer 0 (corexy) / bed top (bedslinger); `idle` = nozzle height over the bed when idle;
-  `focus` = height the view looks at; `amsTop` = where a single AMS stands on the printer (null: not possible, e.g. open frames).
+  `focus` = height the view looks at; `park` / `wipe` (optional, bed coordinates [x, z]) = where the nozzle purges / waits
+  (the purge chute) and wipes (the wiper) in the prep stages (default: behind the rear-left part of the bed); `amsTop` = where a single AMS stands on the printer (null: not possible, e.g. open frames).
 - `_xray(on)`: hide doors, glass and covers.
 - `_amsChanged(units)`: the connected AMS units changed (e.g. a spool holder only without AMS).
 - `_tubesUpdate()`: called every frame; PTFE tubes (`this._tubePath(nodes)` + `TubeGeometry`).

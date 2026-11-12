@@ -6,6 +6,7 @@ Object.assign(MODEL, {
   _geometry() {
     const c = this._cfg1();
     return { w: c.w, d: c.d, h: c.h, tip: c.tip, idle: c.idle, bed: [c.bed, c.bedZ || c.bed], kinematics: "bedslinger", focus: c.h * 0.55,
+             park: [c.beam[0] + 10, 0], wipe: [c.beam[0], 0],
              amsTop: null, amsGap: c.amsGap };
   },
 

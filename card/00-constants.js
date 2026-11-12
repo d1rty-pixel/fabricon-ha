@@ -40,5 +40,24 @@
 const V = "0.160.0";
 const CDN = `https://cdn.jsdelivr.net/npm/three@${V}`;
 
+// What head and bed do in a print_stage while nothing is extruded (HA reports no position: a choreography per kind,
+// card/71-motion.js _stageMotion). Stages not listed (pauses, unknown) keep the head where it is.
+const FAB_STAGE_MOTION = {
+  park: ["heatbed_preheating", "heating_heatbed", "waiting_for_heatbed", "heating_nozzle", "checking_extruder_temperature",
+    "heating_chamber", "waiting_for_chamber", "cooling_chamber", "cooling_heatbed", "thermal_preconditioning", "purifying_chamber_air",
+    "identifying_build_plate", "checking_platform", "checking_material", "checking_material_position", "checking_quick_release_lever",
+    "checking_door_and_cover", "confirming_birdseye_camera", "preparing", "m400_pause"],
+  purge: ["changing_filament", "loading_filament", "unloading_filament", "preparing_ams", "preparing_hotend", "testing_hotend_change"],
+  wipe: ["cleaning_nozzle_tip"],
+  home: ["homing_toolhead"],
+  probe: ["auto_bed_leveling", "high_temperature_bed_leveling", "bed_leveling_phase_1", "bed_leveling_phase_2", "measuring_surface"],
+  shake: ["vibration_compensation", "motor_noise_cancellation", "motor_noise_showoff", "measuring_motion_precision",
+    "enhancing_motion_precision", "measuring_motion_accuracy"],
+  lines: ["calibrating_dynamic_flow", "calibrating_flow_ratio", "printing_calibration_lines", "calibrating_clumping_detection"],
+  scan: ["scanning_bed_surface", "inspecting_first_layer", "calibrating_micro_lidar", "calibrating_lidar", "calibrating_nozzle_offset",
+    "calibrating_birdseye_camera", "calibrating_live_view_camera", "calibrating_camera_offset"],
+};
+const FAB_STAGE_KIND = Object.fromEntries(Object.entries(FAB_STAGE_MOTION).flatMap(([k, l]) => l.map((st) => [st, k])));
+
 // AMS 2 Pro (372 x 280 x 226): the unit's own size, the same on every printer; models place it (_geo.amsTop)
 const AMS_W = 372, AMS_D = 280, AMS_BASE = 120, AMS_R = 106;

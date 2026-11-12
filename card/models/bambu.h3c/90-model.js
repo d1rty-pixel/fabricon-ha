@@ -8,7 +8,7 @@ Object.assign(MODEL, {
 
   // amsTop null: the AMS 3H is drawn as part of the printer; further AMS units (up to 4, via tool 1) stand beside it
   _geometry() {
-    return { w: W, d: D, h: H + 250, tip: TIP, idle: 60, bed: this._bedSize(), kinematics: "corexy_bed_z", focus: 520,
+    return { w: W, d: D, h: H + 250, tip: TIP, idle: 60, bed: this._bedSize(), kinematics: "corexy_bed_z", focus: 520, park: [CHUTE[0], -240],
              amsTop: null, amsGap: [40, 40] };
   },
 

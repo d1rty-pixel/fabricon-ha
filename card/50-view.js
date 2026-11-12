@@ -114,11 +114,11 @@ Object.assign(FabriconCard.prototype, {
       n.g.position.y += ((this._nozzleLift[k] || 0) - n.g.position.y) * Math.min(1, dt * 5);
     }
 
-    if (this._gc) this._replay(dt, job);
+    if (this._gc) this._replay(dt, job, t);
     else this._simulate(dt, t, job);
 
     // spools turn while feeding: on the AMS the front of the spool runs down into the feeders
-    for (const sp of [...this._units.flatMap((u) => u.spools), ...Object.values(this._holders).map((h) => h.spool)]) if (sp.spin) sp.g.rotation.x += dt * 0.6;
+    for (const sp of [...this._units.flatMap((u) => u.spools), ...Object.values(this._holders).map((h) => h.spool)]) if (sp.spin) sp.g.rotation.x += dt * 0.6 * sp.spin;
 
     this._tubesUpdate();
     this._ctl.update();
